@@ -1,0 +1,106 @@
+body {
+	margin: 0;
+	padding: 0;
+	left: 0;
+	top: 0;
+	height: 100%;
+	width: 100%;
+	position: absolute;
+	font-family: sans-serif;
+	font-size: 15px;
+	line-height: 17px;
+}
+
+ul{
+	padding: 0px;
+	margin: 0px;
+	list-style: none;
+}
+
+table{
+	width: 100%;
+}
+
+.header{
+	font-size: 20px;
+	padding: 15px 10px;
+	font-weight: 500;
+	color: #fff;
+	background-position: 5px center;
+	background-repeat: no-repeat;
+	line-height: 20px;
+}
+
+.twitter .header{
+	background-color: #29a1ed;
+}
+
+.body{
+	display: inline-block;
+	height: calc(100% - 50px - 50px);
+	background-color: rgb(240, 240, 240);
+}
+
+.footer{
+	height: 50px;
+	background-color: rgb(227, 227, 227);
+}
+
+.message-list .message{
+	margin: 15px 10px;
+	background-color: transparent;
+}
+
+.message-list .message:not(.collapsed){
+	margin: 2% 3%;
+	position: absolute;
+}
+
+.message:not(.collapsed) *{
+	padding: 10px 5px;
+}
+
+.message-header{
+	font-weight: 400;
+	font-size: 15px;
+}
+
+.message:not(.collapsed) .message-header{
+	border-radius: 5px 5px 0 0;
+}
+
+.twitter .message:not(.collapsed) .message-header{
+	background-color: #29a1ed;
+	color: #fff;
+}
+
+.message-header .displayname{
+	text-align: left;
+	font-size: 16px;
+	font-weight: 500;
+}
+
+.message-header .datetime{
+	text-align: right;
+}
+
+.message-body{
+	background-color: #fff;
+	font-size: 17px;
+}
+
+.collapsed .message-body{
+	background-color: transparent;
+}
+
+.message-footer{
+	height: 0;
+	display: none;
+}
+
+.message:not(.collapsed) .message-footer{
+	display: block;
+	background-color: #000;
+	height: 30px;
+	border-radius: 0 0 5px 5px;
+}
