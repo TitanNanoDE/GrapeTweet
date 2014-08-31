@@ -6,21 +6,180 @@
 	<meta name="viewport" content="width=device-width">
 	<link rel="stylesheet" href="css/app.css">
 </head>
-<body class="twitter">
-	<header class="header">Timeline</header>
-	<div class="body">
-		<ul class="message-list">
-			<li class="message collapsed">
-				<div class="message-header"><table>
-					<tr>
-						<td class="displayname">TitanNano</td><td class="datetime">0s</td>
-					</tr>
-				</table></div>
-				<div class="message-body">This is a test tweet for the new SocialOn app. Just some random text whiout any sense!! :-D :D :-) :)</div>
-				<div class="message-footer"></div>
-			</li>
-		</ul>
+<body>
+	<div class="splash">
+		<div class="logo"></div>
+		<button class="signIn hidden" >Sign In</button>
+		<input type="number" placeholder="7-Digits PIN" class="code hidden">
+		<button class="verify hidden">Verify</button>
 	</div>
-	<footer class="footer"></footer>
+	
+	<div class="client twitter right">
+
+		<!-- streams sheet -->
+		<div class="sheet streams">
+			<div class="timeline page">
+				<header class="header"><div class="title">Timeline</div><a href="#!/profile" class="item profile"></a><a href="#!/new-tweet" class="item new-post"></a></header>
+				<div class="body">
+					<ul class="tweet-list">
+						<li class="tweet collapsed table">
+							<div class="user-image-container td"><span class="user-image"></span></div>	
+							<div class="td">
+								<div class="tweet-header tr">
+									<div class="td"><span class="displayname">TitanNano</span><span class="username">@titannano</span></div>
+									<div class="datetime td">0s</div>	
+								</div>
+									<div class="tweet-body tr">
+									<div class="td text">This is a test tweet for the new SocialOn app. Just some random text without any sense!! :-D :D :-) :)</div>
+								</div>
+								<div class="tweet-footer"></div>
+							</div>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+		
+		<!-- messages sheet -->
+		<div class="messages sheet">
+			<div class="conversations page">
+				<header class="header"><div class="messages title">Messages</div><a href="#!/profile" class="item profile"></a><a href="#!/messages/contacts" class="item new-conv"></a></header>
+				<div class="body">
+					<ul class="conv-list"></ul>
+				</div>
+			</div>
+			<div class="contacts page overlay right">
+				<header class="header"><a href="#!/messages" class="back-title">Contacts</a></header>
+				<div class="body">
+					<ul class="contact-list"></ul>
+				</div>
+			</div>
+			<div class="page chat right">
+				<header class="header"><a href="#!/messages" class="back-title"></a><a href="#!/profile/" class="header-user-image"></a></header>
+				<div class="body">
+					<ul class="message-list" data-user-id=""></ul>
+				</div>
+				<div class="text-box">
+					<div class="border"></div>
+					<div class="text" contenteditable></div>
+				</div>
+				<div class="send"></div>
+			</div>
+		</div>
+		
+		<!-- notifications sheet -->
+		<div class="notifications sheet">
+			<header class="header"><div class="notifications title">Notifications</div><a href="#!/profile" class="item profile"></a></header>
+			<div class="body">
+			</div>
+		</div>
+		
+		<!-- find sheet -->
+		<div class="find sheet">
+			<header class="header"><div class="find title">Find</div></header>
+			<div class="body">
+			</div>
+		</div>
+		
+		<!-- settings sheet -->
+		<div class="settings sheet">
+			<div class="page main">
+				<header class="header"><div class="settings title">Settings</div><a href="#!/settings/about" class="item about"></a></header>
+				<div class="body">
+				</div>
+			</div>
+			<div class="page about right">
+				<header class="header"><a href="#!/settings" class="back-title">About</a></header>
+				<div class="body">
+				</div>
+			</div>
+		</div>
+		
+		<!-- profile sheet -->
+		<div class="profile sheet visible bottom">
+			<header class="header"><div class="profile title">Profile</div></header>
+			<div class="body">
+			</div>
+		</div>
+		<footer class="footer">
+			<a href="#!/streams" class="item streams">Tweets</a>
+			<a href="#!/messages" class="item messages">Messages</a>
+			<a href="#!/notifications" class="item notifications">Notifications</a>
+			<a href="#!/find" class="item find">Find</a>
+			<a href="#!/settings" class="item settings">Settings</a>
+		</footer>
+	</div>
+	
+	<template id="tweet-layout">
+		<li class="tweet collapsed table">
+			<div class="user-image-container td"><span class="user-image"></span></div>	
+			<div class="td">
+				<div class="tweet-header tr">
+					<div class="td"><span class="displayname"></span><span class="username"></span></div>
+					<div class="datetime td"></div>	
+				</div>
+				<div class="tweet-body tr">
+					<div class="td text"></div>
+				</div>
+				<div class="tweet-footer"></div>
+			</div>
+		</li>
+	</template>
+	
+	<template id="conv-layout">
+		<li class="conv table">
+			<div class="user-image-container td"><span class="user-image"></span></div>	
+			<div class="td">
+				<div class="conv-header tr">
+					<div class="td"><span class="displayname"></span><span class="username"></span></div>
+					<div class="datetime td"></div>	
+				</div>
+				<div class="conv-body tr">
+					<div class="td text"></div>
+				</div>
+			</div>
+		</li>
+	</template>
+	
+	<template id="contact-layout">
+		<li class="contact table">
+			<div class="user-image-container td"><span class="user-image"></span></div>	
+			<div class="contact-info td">
+				<div class="displayname"></div>
+				<div class="username"></div>
+			</div>
+		</li>
+	</template>
+	
+	<template id="chat-message-layout">
+		<li class="message">
+			<div class="user-image"></div>
+			<div class="text"></div>
+		</li>
+	</template>
+	
+	<template id="chat-my-message-layout">
+		<li class="message my">
+			<div class="text"></div>
+		</li>
+	</template>
+	
+	<template id="stream-page-layout">
+		<div class="page">
+			<header class="header"><div class="title"></div><div class="item profile"></div></header>
+			<div class="body">
+				<ul class="tweet-list"></ul>
+			</div>
+		</div>
+	</template>
+	
+	<script type="text/javascript" src="af/af.js"></script>
+	<script type="text/javascript" src="af/modules/core-extensions.js"></script>
+	<script type="text/javascript" src="af/modules/classes.js"></script>
+	<script type="text/javascript" src="af/modules/connections.js"></script>
+	<script type="text/javascript" src="af/modules/hashController.js"></script>
+	
+	<script type="text/javascript" src="google/hmac-sha1.js"></script>
+	
 	<script type="text/javascript" src="js/app.js" defer></script>
 </body>
