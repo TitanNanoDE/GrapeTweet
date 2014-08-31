@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
-  "name": "SocialOn",
-  "description": "a multi network client for diferent social networks",
+  "name": "Grape Tweet",
+  "description": "a Twitter Client",
   "launch_path": "/index.html",
   "icons": {
     "16": "/img/icons/icon16x16.png",
@@ -14,14 +14,25 @@
     "url": "http://example.com"
   },
   "type": "privileged",
-  "permissions": {},
+  "permissions": {
+    "push": {
+      "description": "Required for getting updates from the push server."  
+    },
+    "desktop-notification": {
+      "description": "Required for displaying alerts when app is in the background."
+    },
+    "systemXHR": {
+      "description": "required to connect to the grape server and the twitter API."
+    }
+  },
   "installs_allowed_from": [
     "*"
   ],
+  "origin": "app://grape-tweet.com",
   "locales": {
     "de": {
-      "name": "SocialOn",
-      "description": "ein multi Netztwert Client für verschiedenste Soziale-Netzwerke",
+      "name": "Grape Tweet",
+      "description": "ein Twitter Client",
       "permissions": {}
     }
   },
