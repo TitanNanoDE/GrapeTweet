@@ -258,7 +258,7 @@ ul{
 }
 
 .chat .body{
-	height: calc(100% - 50px - 32px);
+	height: calc(100% - 50px - 34px);
 }
 
 .client.change .sheet .body{
@@ -440,7 +440,7 @@ ul{
 }
 
 .chat .text-box{
-	height: 32px;
+	height: 34px;
 	box-sizing: border-box;
 	position: absolute;
 	width: calc(100% - 30px);
@@ -460,6 +460,10 @@ ul{
 	box-sizing: border-box;
 }
 
+.chat .text-box, .chat .send{
+	border-top: 1px solid #D5D5D5;
+}
+
 .chat .text-box .text{
 	bottom: 6px;
 	width: calc(100% - 28px);
@@ -472,10 +476,11 @@ ul{
 
 .chat .send{
 	position: absolute;
-	height: 26px;
-	width: 26px;
-	right: 6px;
-	margin-top: 2px;
-	background-size: contain;
+	height: 32px;
+	width: 32px;
+	right: 0;
+	background-size: 26px;
 	background-image: url(/img/speech-buuble.png);
+	background-position: left center;
+	background-repeat: no-repeat;
 }
