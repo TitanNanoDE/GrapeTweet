@@ -3,6 +3,8 @@ $_('grapeTweet').module('net', function(done){
 	var AsyncLoop= $('classes').AsyncLoop;
 
 	done({
+		
+//		download existing direct messages
 		downloadDirectMessages : function(app){
 			return new $$.Promise(function(done){
 				var max_id_in= 0;
@@ -28,14 +30,17 @@ $_('grapeTweet').module('net', function(done){
 						data.forEach(function(item){
 							delete item.recipient;
 							delete item.sender;
-          
-							if(!app.account.conversations[item.sender_id])
-								app.account.conversations[item.sender_id]= [];
 					
-							if(app.dataStatus.lastDM_in === '')
-								app.dataStatus.lastDM_in= item.id_str;
-					
-							app.account.conversations[item.sender_id].push(item);	
+							if(app.dataStatus.lastDM_in === ''){
+								app.setState({
+									name : 'dataStatus',
+									lastDM_in : item.id_str
+								});
+							}	
+							
+							app.storage.storeMessage(item).catch(function(e){
+								$$.console.log(e);
+							});
 							max_id_in= item.id_str;
 						});
 					
@@ -65,14 +70,17 @@ $_('grapeTweet').module('net', function(done){
 						data.forEach(function(item){
 							delete item.recipient;
 							delete item.sender;
-          	
-							if(!app.account.conversations[item.recipient_id])
-								app.account.conversations[item.recipient_id]= [];
 						
-							if(app.dataStatus.lastDM_out === '')
-								app.dataStatus.lastDM_out= item.id_str;
+							if(app.dataStatus.lastDM_out === ''){
+								app.setState({
+									name : 'dataStatus',
+									lastDM_out : item.id_str
+								});
+							}
 					
-							app.account.conversations[item.recipient_id].push(item);	
+							app.storage.storeMessage(item).catch(function(e){
+								$$.console.log(e);
+							});
 							max_id_out= item.id_str;
 						});
 					
@@ -82,76 +90,267 @@ $_('grapeTweet').module('net', function(done){
 					request.catch(exit);
 				});
 			
-				$$.Promise.all([loopIn.incalculable(), loopOut.incalculable()]).then(function(){
-					var convs= app.account.conversations;
-				
-//					sort messages
-					$$.Object.keys(convs).forEach(function(item){
-						var current= convs[item];
-						
-						current= current.sort(function(a, b){
-							return (( (new $$.Date(a.created_at)).getTime() > (new $$.Date(b.created_at)).getTime() ) ? 1 : -1);
-						});
-					});
-					done();
-				});
+				$$.Promise.all([loopIn.incalculable(), loopOut.incalculable()]).then(done);
 			});
 		},
 		
+//		fetch the new direct messages
+		fetchNewMessages : function(app){
+			return new Promise(function(){
+				
+				var loopIn= new AsyncLoop(function(next, exit){
+					var request= app.twitterSocket.get('/1.1/direct_messages.json', { since_id : app.dataStatus.lastDM_in, count : 200 });
+      	
+					request.then(function(data){
+						data= $$.JSON.parse(data);
+					
+						if(data.length === 0)
+							return exit();
+				
+						data.forEach(function(item, index){
+							delete item.recipient;
+							delete item.sender;
+					
+							if(index === 0){
+								app.setState({
+									name : 'dataStatus',
+									lastDM_in : item.id_str
+								});
+							}	
+							
+							app.storage.storeMessage(item).catch(function(e){
+								$$.console.log(e);
+							});
+						});
+					
+						next();
+					});
+					
+					request.catch(exit);
+				});
+			
+				var loopOut= new AsyncLoop(function(next, exit){
+					var request= app.twitterSocket.get('/1.1/direct_messages/sent.json', { since_id : app.dataStatus.lastDM_out, count : 200 });
+      		
+					request.then(function(data){
+						data= $$.JSON.parse(data);
+					
+						if(data.length === 0)
+							return exit();
+					
+						data.forEach(function(item, index){
+							delete item.recipient;
+							delete item.sender;
+						
+							if(index === 0){
+								app.setState({
+									name : 'dataStatus',
+									lastDM_out : item.id_str
+								});
+							}
+					
+							app.storage.storeMessage(item).catch(function(e){
+								$$.console.log(e);
+							});
+						});
+					
+						next();
+					});
+					
+					request.catch(exit);
+				});
+				
+				$$.Promise.all([loopIn.incalculable(), loopOut.incalculable()]).then(done);
+			});
+		},
+		
+//		synchonizing contacts
 		syncContacts : function(app){
     		return new $$.Promise(function(success){
-				$$.Promise.all([app.twitterSocket.get('/1.1/friends/ids.json', { user_id : app.account.userId }), app.twitterSocket.get('/1.1/followers/ids.json', { user_id : app.account.userId })]).then(function(values){
-					var following= $$.JSON.parse(values[0]).ids;
-					var follower= $$.JSON.parse(values[1]).ids;
-					var contacts= [];
-					var getList= [];
-					var idList= [];
-        
-//      			isolating contacts
-					if(following.length == Math.min(following.length, follower.length)){
-						following.forEach(function(item){
-							if(follower.indexOf(item) > -1)
-								contacts.push(item);
-						});
-					}else{
-						follower.forEach(function(item){
-							if(following.indexOf(item) > -1)
-								contacts.push(item);
-						});
+				var following= app.syncStatus.contacts.followingCache;
+				var follower= app.syncStatus.contacts.followerCache;
+				var contactsList= app.syncStatus.contacts.contactsCache;
+				
+				var followerLoop= new AsyncLoop(function(next, exit){
+					if(app.syncStatus.contacts.nextFollowerCursor != '0')
+						var request= app.twitterSocket.get('/1.1/followers/ids.json', { user_id : app.account.userId, cursor : app.syncStatus.contacts.nextFollowerCursor });
+					else{
+						return exit();
 					}
-        	
-//  		    	loading contacts infos
-					var i= 0;
-					while(i < contacts.length){
-						if(idList.length < 100){
-							idList.push(contacts[i]);
-						}else{
-							getList.push(app.twitterSocket.get('/1.1/users/lookup.json', { user_id : idList.join(','), include_entities : false }));
-							idList= [];
-							idList.push(contacts[i]);
-						}
-						i++;
-					}
-        
-					if(idList.length > 0)
-						getList.push(app.twitterSocket.get('/1.1/users/lookup.json', { user_id : idList.join(','), include_entities : false }));
-        	
-					$$.Promise.all(getList).then(function(values){
-						var contactsInfos= [];
-          	
-						values.forEach(function(item){
-							contactsInfos= contactsInfos.concat($$.JSON.parse(item));
+					
+					request.then(function(data){
+						data= $$.JSON.parse(data);
+					
+						follower= follower.concat(data.ids);
+						app.setState({
+							name : 'syncStatus',
+							contacts : {
+								nextFollowerCursor : data.next_cursor
+							}
 						});
-          	
-						contactsInfos.forEach(function(item){
-							app.account.contacts[item.id]= item;
-						});
+						return next();
+					});
 						
-//  		    	  	done, all contacts loaded
-						success();
+					request.catch(function(e){
+						app.setState({
+							name : 'syncStatus',
+							contacts : {
+								followerCache : follower
+							}
+						});
+						var timeout= ($$.parseInt(e.nextTry) * 1000) - $$.Date.now();
+						$$.setTimeout(function(){ app.net.syncContacts(app); }, timeout);
+						return exit();
 					});
 				});
-			});	
+					
+				var followingLoop= new AsyncLoop(function(next, exit){
+					if(app.syncStatus.contacts.nextFollowingCursor != '0')
+						var request= app.twitterSocket.get('/1.1/friends/ids.json', { user_id : app.account.userId, cursor : app.syncStatus.contacts.nextFollowingCursor });
+					else{
+						return exit();
+					}
+				
+					request.then(function(data){
+						data= $$.JSON.parse(data);
+					
+						following= following.concat(data.ids);
+						app.setState({
+							name : 'syncStatus',
+							contacts : {
+								nextFollowingCursor : data.next_cursor
+							}
+						});
+						next();
+					});
+					
+					request.catch(function(e){
+						app.setState({
+							name : 'syncStatus',
+							contacts : {
+								followingCache : follower
+							}
+						});
+						var timeout= ($$.parseInt(e.nextTry) * 1000) - $$.Date.now();
+						$$.setTimeout(function(){ app.net.syncContacts(app); }, timeout);
+						exit();
+					});
+				});
+				
+				var userInfoLoop= new AsyncLoop(function(next, exit){
+					var list= null;
+					
+					if(contactsList.length > 0){
+						
+						app.setState({
+							name : 'syncStatus',
+							contacts : {
+								fetchingInfo : true
+							}
+						});
+						
+						if(contactsList.length > 100){
+							list= [];
+							for(var i= 0; i <= 100; i++){
+								list.push(contactsList.shift());
+							}
+						}else{
+							list= contactsList;
+							contactsList= [];
+						}
+						
+						var request= app.twitterSocket.get('/1.1/users/lookup.json', { user_id : list.join(','), include_entities : false });
+						
+						request.then(function(contacts){
+							var contacts= $$.JSON.parse(contacts);
+							
+							contacts.forEach(function(item){
+								app.storage.storeContact(item);
+							});
+							next();
+						});
+						
+						request.catch(function(e){
+							app.setState({
+								name : 'syncStatus',
+								contacts : {
+									contactsCache : contactsList
+								}
+							});
+							var timeout= ($$.parseInt(e.nextTry) * 1000) - $$.Date.now();
+							$$.setTimeout(function(){ app.net.syncContacts(app); }, timeout);
+							exit();
+						});
+					}else{
+						app.setState({
+							name : 'syncStatus',
+							contacts : {
+								fetchingInfo : false
+							}
+						});
+						return exit();
+					}
+				});
+				
+				var scheduleNext= function(){
+					$$.setTimeout(function(){ app.net.syncContacts(app); }, untilNextSync);
+				
+					untilNextSync= Math.round(untilNextSync / 1000);
+					if(untilNextSync < 60)
+						untilNextSync= untilNextSync + ' seconds';
+					else
+						untilNextSync= Math.round(untilNextSync / 60) + ' minutes';
+					
+					$$.console.log('contacts are synchronized again in ' + untilNextSync + '!');
+					app.ui.renderContacts(app).then(success);
+				};
+				
+				var timeout= Date.now() - app.syncStatus.contacts.lastSync;
+				var untilNextSync= 1800000 - timeout;
+				untilNextSync= ((untilNextSync > 0) ? untilNextSync : 1800000);
+				
+//				only sync every 30 minutes
+				if( timeout >  1800000 || app.syncStatus.contacts.fetchingInfo || app.syncStatus.contacts.nextFollowerCursor != '-1'){
+					
+//					start or continue fetching contacts ids unless we have pending contact info requests
+					if(!app.syncStatus.contacts.fetchingInfo){
+						$$.Promise.all([followerLoop.incalculable(), followingLoop.incalculable()]).then(function(){
+						
+//							check if download is complete
+							if(app.syncStatus.contacts.nextFollowingCursor == '0' && app.syncStatus.contacts.nextFollowerCursor == '0'){
+								app.setState({
+									name : 'syncStatus',
+									contacts : {
+										nextFollowingCursor : '-1',
+										nextFollowerCursor : '-1',
+										lastSync : $$.Date.now()
+									}
+								});
+							}
+						
+//      					isolating contacts
+							if(following.length == Math.min(following.length, follower.length)){
+								following.forEach(function(item){
+									if(follower.indexOf(item) > -1)
+										contactsList.push(item);
+								});
+							}else{
+								follower.forEach(function(item){
+									if(following.indexOf(item) > -1)
+										contactsList.push(item);
+								});
+							}
+						
+							userInfoLoop.incalculable().then(scheduleNext);
+						});
+					}else{
+						userInfoLoop.incalculable().then(scheduleNext);
+					}
+					$$.console.log('contacts just synced!');
+				}else{
+					scheduleNext();
+				}
+			});
 		},
 		
 		cacheImage : function(url, app){

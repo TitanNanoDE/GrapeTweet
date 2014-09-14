@@ -12,6 +12,7 @@
 		<button class="signIn hidden" >Sign In</button>
 		<input type="number" placeholder="7-Digits PIN" class="code hidden">
 		<button class="verify hidden">Verify</button>
+		<div class="loading hidden"></div>
 	</div>
 	
 	<div class="client twitter right">
@@ -103,7 +104,7 @@
 		</div>
 		<footer class="footer">
 			<a href="#!/streams" class="item streams">Tweets</a>
-			<a href="#!/messages" class="item messages">Messages</a>
+			<a href="#!/messages" class="item messages">Messages<div class="count hidden"></div></a>
 			<a href="#!/notifications" class="item notifications">Notifications</a>
 			<a href="#!/find" class="item find">Find</a>
 			<a href="#!/settings" class="item settings">Settings</a>
@@ -152,14 +153,14 @@
 	</template>
 	
 	<template id="chat-message-layout">
-		<li class="message">
+		<li class="message" data-id="">
 			<div class="user-image"></div>
 			<div class="text"></div>
 		</li>
 	</template>
 	
 	<template id="chat-my-message-layout">
-		<li class="message my">
+		<li class="message my" data-id="">
 			<div class="text"></div>
 		</li>
 	</template>
@@ -184,5 +185,7 @@
 	<script type="text/javascript" src="js/engine.js"></script>
 	<script type="text/javascript" src="js/ui.js"></script>
 	<script type="text/javascript" src="js/net.js"></script>
+	<script type="text/javascript" src="js/storage.js"></script>
+	<script type="text/javascript" src="js/misc.js"></script>
 	<script type="text/javascript" src="js/app.js"></script>
 </body>

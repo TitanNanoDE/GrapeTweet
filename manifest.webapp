@@ -25,6 +25,10 @@
       "description": "required to connect to the grape server and the twitter API."
     }
   },
+  "messages": [
+    { "push": "/index.html"},
+    { "push-register": "/index.html"}
+  ],
   "installs_allowed_from": [
     "*"
   ],

@@ -87,13 +87,41 @@ ul{
 	font-size: 25px;
 }
 
-.splash button.hidden, .splash input.hidden, .splash .logo.hidden{
+.splash button.hidden, .splash input.hidden, .splash .logo.hidden, .splash .loading.hidden{
 	display: none;
 }
 
 .splash button:active{
 	margin: 0;
 	box-shadow: none;
+}
+
+.splash .loading{
+	border: 5px solid rgb(255, 255, 255);
+	width: 40px;
+	height: 40px;
+	border-radius: 100%;
+	border-bottom-width: 4px;
+	border-left-width: 4px;
+	border-top-width: 15px;
+	border-right-width: 15px;
+	box-sizing: border-box;
+	animation-iteration-count: infinite;
+	animation-name: spinning;
+	animation-duration: 0.8s;
+	animation-timing-function: ease-out;
+	margin: 13vh auto 0 auto;
+}
+
+@keyframes spinning{
+	
+	from{
+		transform: rotate(0deg);
+	}
+	
+	to{
+		transform: rotate(360deg);
+	}
 }
 
 .client.right{
@@ -295,14 +323,31 @@ ul{
 	color: #5D5D5D;
 	text-decoration: none;
 	float: left;
+	width: 20vw;
+	box-sizing: content-box;
+	position: relative;
 }
 
 .footer .item:active, .footer .item.active{
 	background-color: #D1D1D1;
 }
 
-.footer .item{
-	width: 20vw;
+.footer .item .count{
+	position: absolute;
+	background-color: #24A2F2;
+	right: 13px;
+	top: 3px;
+	text-align: center;
+	color: rgb(255, 255, 255);
+	font-size: 9px;
+	min-width: 11px;
+	border-radius: 3px;
+	box-sizing: content-box;
+	padding: 1px 2px;
+}
+
+.footer .item .hidden{
+	display: none;
 }
 
 .footer .streams{
@@ -388,8 +433,12 @@ ul{
 	padding: 5px 0;
 }
 
-.conv.read .conv-body .text{
+.conv.my .conv-body .text{
 	color: #7A7A7A;
+}
+
+.conv.unread{
+	background-color: #BFD7FF;
 }
 
 .tweet-footer{
