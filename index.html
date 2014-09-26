@@ -4,6 +4,7 @@
 	<title>Privileged app</title>
 	<meta name="description" content="A privileged app stub">
 	<meta name="viewport" content="width=device-width">
+	<meta name='theme-color' content='#29a1ed'>
 	<link rel="stylesheet" href="css/app.css">
 </head>
 <body>
@@ -51,14 +52,14 @@
 			</div>
 			<div class="page chat right">
 				<header class="header"><a href="#!/messages" class="back-title"></a><a href="#!/profile/" class="header-user-image"></a></header>
-				<div class="body">
+				<div class="c body">
 					<ul class="message-list" data-user-id=""></ul>
 				</div>
 				<div class="text-box">
 					<div class="border"></div>
 					<div class="text" contenteditable></div>
+					<div class="send"></div>
 				</div>
-				<div class="send"></div>
 			</div>
 			<div class="contacts page overlay right">
 				<header class="header"><a href="#!/messages" class="back-title">Contacts</a></header>
@@ -100,6 +101,31 @@
 		<div class="profile sheet visible bottom">
 			<header class="header"><div class="profile title">Profile</div></header>
 			<div class="body">
+				<div class="profile-header">
+					<div class="page">
+						<div class="user-image"></div>
+						<div class="displayname">User</div>
+						<div>@<span class="username">username</span></div>
+						<div><span class="page-dot active"></span><span class="page-dot"></span></div>
+					</div>
+					<div class="page right"></div>
+				</div>
+				<div class="profile-info">
+					<table>
+					<tr>
+						<td class="first"><span class="tweets">2,000</span><br>Tweets</td>
+						<td class="second"><span class="following">100</span><br>Following</td>
+						<td><span class="follower">5,000</span><br>Follower</td>
+					</tr>
+					</table>
+					<div class="buttons">
+						<button class="follow"></button><button>more</button>
+					</div>
+				</div>
+				<div class="private-imgaes"></div>
+				<div class="public-images"></div>
+				<div class="lastest-tweets"></div>
+				<div class="action-list"></div>
 			</div>
 		</div>
 		<footer class="footer">
@@ -156,12 +182,14 @@
 		<li class="message" data-id="">
 			<div class="user-image"></div>
 			<div class="text"></div>
+			<div class="date"></div>
 		</li>
 	</template>
 	
 	<template id="chat-my-message-layout">
 		<li class="message my" data-id="">
 			<div class="text"></div>
+			<div class="date"></div>
 		</li>
 	</template>
 	

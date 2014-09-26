@@ -185,6 +185,7 @@ ul{
 	width: 100%;
 	height: 50px;
 	color: #fff;
+	background-color: #29a1ed;
 	background-position: 5px center;
 	background-repeat: no-repeat;
 	position: relative;
@@ -268,10 +269,6 @@ ul{
 	background-image: url("/img/settings-title.png");
 }
 
-.header{
-	background-color: #29a1ed;
-}
-
 .header .item:active, .twitter .header .back-title:active{
 	background-color: #4BB9FF;
 }
@@ -285,8 +282,8 @@ ul{
 	overflow-y: auto;
 }
 
-.chat .body{
-	height: calc(100% - 50px - 34px);
+.body.c{ 
+	height: calc(100% - 95px);
 }
 
 .client.change .sheet .body{
@@ -455,7 +452,7 @@ ul{
 
 .chat .message{
 	text-align: left;
-	padding: 6px 10px;
+	padding: 2px 10px;
 }
 
 .chat .message.my{
@@ -482,6 +479,15 @@ ul{
 	margin-bottom: 5px;
 }
 
+.chat .message .date{
+	font-size: 8px;
+	color: #A8A8A8;
+}
+
+.chat .message:not(.my) .date{
+	margin-left: calc(15vw + 5px);
+}
+
 .chat .message.my .text{
 	background-color: #4189E7;
 	text-align: left;
@@ -489,47 +495,137 @@ ul{
 }
 
 .chat .text-box{
-	height: 34px;
+	height: 45px;
 	box-sizing: border-box;
-	position: absolute;
-	width: calc(100% - 30px);
-	padding: 0 10px;
+	border-top: 1px solid #D5D5D5;
 }
 
 .chat .text-box .border{
-	position: absolute;
 	border: none;
 	border-left: 1px solid;
 	border-bottom: 1px solid;
 	border-right: 1px solid;
-	width: calc(100% - 20px); 
-	height: 7px; 
-	border-color: #b3b3b3; 
-	bottom: 6px;
+	height: 7px;
+	border-color: #B3B3B3;
+	display: inline-block;
 	box-sizing: border-box;
-}
-
-.chat .text-box, .chat .send{
-	border-top: 1px solid #D5D5D5;
+	margin-bottom: 7px;
+	width: calc(100% - 60px);
+	margin-left: 9px;
 }
 
 .chat .text-box .text{
 	bottom: 6px;
-	width: calc(100% - 28px);
 	box-sizing: border-box;
 	overflow: auto;
-	margin: 0 4px;
-	height: 20px;
+	min-height: 20px;
 	position: absolute;
+	font-size: 18px;
+	max-height: 34px;
+	width: calc(100% - 69px);
+	left: 14px;
 }
 
 .chat .send{
-	position: absolute;
-	height: 32px;
-	width: 32px;
-	right: 0;
-	background-size: 26px;
-	background-image: url(/img/speech-buuble.png);
-	background-position: left center;
-	background-repeat: no-repeat;
+    height: 45px;
+    width: 45px;
+    right: 0px;
+    background-size: 40px auto;
+    background-image: url("/img/speech-buuble.png");
+    background-position: center center;
+    background-repeat: no-repeat;
+    display: inline-block;
+}
+
+.profile .profile-header{
+	height: 180px;
+	background: #4a4a4a;
+	color: #fff;
+	position: relative;
+	font-size: 16px;
+	text-align: center;
+	overflow: hidden;
+}
+
+.profile .profile-header .user-image{
+	height: 70px;
+	width: 70px;
+	border: 5px solid rgb(255, 255, 255);
+	border-radius: 5px;
+	box-sizing: border-box;
+	margin: 30px 0 15px 0;
+}
+
+.profile .profile-header .displayname{
+	font-weight: 900;
+}
+
+.profile .profile-info{
+    position: sticky;
+    top: 0;
+    border-top: 3px solid rgb(171, 171, 171);
+}
+
+.profile .profile-info table{
+	border: none;
+	width: 100%;
+	color: #5C5C5C;
+}
+
+.profile .profile-info td{
+	padding: 5px;
+}
+
+.profile .profile-info .first, .profile .profile-info .second{
+	border-right: 1px solid #DDD;
+}
+
+.profile .profile-info .buttons{
+	margin: 5px 0;
+	text-align: right;
+}
+
+.profile .profile-info button{
+	padding: 4px 6px;
+	border: 1px solid #A3A3A3;
+	background-image: linear-gradient(to bottom, #FFF 0%, #FFF 35%, #DBDBDB 100%);
+	font-size: 15px;
+	font-weight: bold;
+	margin: 0 4px;	
+	border-radius: 6px;
+}
+
+.profile .profile-info .follow::after{
+	content: "Follow";
+}
+
+.profile .profile-info button:active{
+	background: #fff;
+}
+
+.profile .profile-info button.following{
+	background-image: linear-gradient(to bottom, #2CB3FB 0%, #2CB3FB 35%, #46A6D8 100%);
+	color: #fff;
+}
+
+.profile .profile-info button.following::after{
+	content: "Following";
+}
+
+.profile .profile-info button.following:active{
+	background: #2fb0f4;
+}
+
+.page-dot{
+	height: 6px;
+	width: 6px;
+	background-color: #818181;
+	background-color: rgba(255, 255, 255, 0.5);
+	border-radius: 100%;
+	display: inline-block;
+	margin: 7px 2px;
+}
+
+.page-dot.active{
+	background-color: #fff;
 }
