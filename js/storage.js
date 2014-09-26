@@ -1,6 +1,7 @@
 $_('grapeTweet').module('storage', function(ready){
 	var db= null;
 	var dbRequest= $$.indexedDB.open('grapeTweetDB', 1);
+	var AsyncLoop= $('classes').AsyncLoop;
 	
 	dbRequest.onerror= function(){
 		$$.console.error('unable to access the DB!');
@@ -19,6 +20,7 @@ $_('grapeTweet').module('storage', function(ready){
 			db.createObjectStore('contacts', { keyPath : 'id' });
 			db.createObjectStore('applicationStates', { keyPath : 'name' });
 			var tweets= db.createObjectStore('tweets', { keyPath : 'id_str' });
+			db.createObjectStore('conversations', { keyPath : 'id' });
 			 
 			direct_messages.createIndex('recipient_id', 'recipient_id', { unique : false });
 			direct_messages.createIndex('sender_id', 'sender_id', { unique : false });
@@ -56,35 +58,29 @@ $_('grapeTweet').module('storage', function(ready){
 		
 //		Direct Messages
 		getConversation : function(userId){
-			return new Promise(function(success, error){
-				var count= 0;
-				var from= db.transaction(['direct_messages']).objectStore('direct_messages').index('sender_id').openCursor();
-				var to= db.transaction(['direct_messages']).objectStore('direct_messages').index('recipient_id').openCursor();
-				var items= [];
+			return new Promise(function(success){
+				var request= db.transaction(['conversations']).objectStore('conversations').get(String(userId));
 				
-				var done= function(){
-					count++;
-					if(count == 2)
-						success(items);
+				request.onsuccess= function(e){
+					success(e.target.result);
 				};
 				
-				var onsuccess= function(e){
-					var cursor= e.target.result;
-					
-					if(cursor){
-						if(cursor.key == userId){
-							items.push(cursor.value);
-						}
-						cursor.continue();
-					}else
-						done();
+				request.onerror= function(){
+					success(null);
 				};
-					
-				to.onsuccess= onsuccess;
-				from.onsuccess= onsuccess;
-				
-				from.onerror= to.error= error;
 			});	
+		},
+		
+		storeConversation : function(conv){
+			return new Promise(function(success, error){
+				var request= db.transaction(['conversations'], 'readwrite').objectStore('conversations').put(conv);
+				
+				request.onsuccess= function(e){
+					success(e.target.result);
+				};
+				
+				request.onerror= error;
+			});
 		},
 		
 		storeMessage : function(message){
@@ -93,6 +89,84 @@ $_('grapeTweet').module('storage', function(ready){
 			
 				request.onsuccess= function(e){
 					success(e.target.result);
+				};
+				
+				request.onerror= error;
+			});
+		},
+		
+		getMessage : function(id){
+			return new Promise(function(success, error){
+				var request= db.transaction(['direct_messages']).objectStore('direct_messages').get(id);
+				
+				request.onsuccess= function(e){
+					success(e.target.result);
+				};
+				
+				request.onerror= error;
+			});
+		},
+		
+		getMessagesChunkBefore : function(id, include){
+			return new Promise(function(success){
+				var list= [];
+				var nextMessage= id;
+				
+				(new AsyncLoop(function(next, exit){
+					var request= db.transaction(['direct_messages']).objectStore('direct_messages').get(nextMessage);
+					
+					request.onsuccess= function(e){
+						var message= e.target.result;
+						nextMessage= message.last;
+						
+						if(include || message.id_str != id)
+							list.push(message);
+						
+						if(nextMessage != null && list.length <= 20)
+							next();
+						else
+							exit();
+					};
+					
+					request.onerror= exit;
+				})).incalculable().then(function(){
+					success(list);
+				});
+			});
+		},
+		
+		getNewMessagesSince : function(id){
+			return new Promise(function(success, error){
+				var list= [];
+				var nextMessage= null;
+				
+				var request= db.transaction(['direct_messages']).objectStore('direct_messages').get(id);
+				
+				request.onsuccess= function(e){
+					nextMessage= e.target.result.next;
+					
+					if(nextMessage != null){
+						(new AsyncLoop(function(next, exit){
+							var request= db.transaction(['direct_messages']).objectStore('direct_messages').get(nextMessage);
+							
+							request.onsuccess= function(e){
+								var message= e.target.result;
+								nextMessage= message.next;
+								list.push(message);
+								
+								if(nextMessage != null)
+									next();
+								else
+									exit();
+							};
+							
+							request.onerror= exit;
+						})).incalculable().then(function(){
+							success(list);
+						});
+					}else{
+						success(list);						
+					}
 				};
 				
 				request.onerror= error;
@@ -114,27 +188,22 @@ $_('grapeTweet').module('storage', function(ready){
 			});
 		},
 		
-		getConversationsList : function(userId){
+		getConversationsList : function(){
 			return new Promise(function(done, error){
-				var request= db.transaction(['direct_messages']).objectStore('direct_messages').openCursor();
-				var conversations= [];
+				var request= db.transaction(['conversations']).objectStore('conversations').openCursor();
+				var conversations= {};
 				
 				request.onsuccess= function(e){
 					var cursor= e.target.result;
 					
 					if(cursor){
-						if(cursor.value.sender_id != userId && conversations.indexOf(cursor.value.sender_id) < 0)
-							conversations.push(cursor.value.sender_id);
-						else if(cursor.value.recipient_id != userId && conversations.indexOf(cursor.value.recipient_id) < 0)
-							conversations.push(cursor.value.recipient_id);
+						conversations[cursor.key]= cursor.value;
 						cursor.continue();
 					}else
 						done(conversations);
 				};
 				
-				request.onerror= function(e){
-					error(e);
-				};
+				request.onerror= error;
 			});
 		},
 		

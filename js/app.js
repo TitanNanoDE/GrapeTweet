@@ -10,7 +10,7 @@ $_('grapeTweet').main(function(){
 	};
   
   	this.twitterSocket= new OAuthClient('twitter', 'https://api.twitter.com', 'gC7HaQ7T4u8HYGgRIhiLz0xGs', 'vNOVVig70BQl0pXjzpaU7Mf88Jd6O2gzTQ6FavnGUTalGtnMM1', { mozSystem : true });
-	this.pushServer= new Socket(Socket.HTTP, 'http://192.168.16.149:8080',  { mozSystem : true });
+	this.pushServerSocket= new Socket(Socket.HTTP, 'http://grapetweet-titannano.rhcloud.com/',  { mozSystem : true });
 	this.messageInSound= new $$.Audio('/sounds/recived.mp3');
 	this.messageOutSound= new $$.Audio('/sounds/sent.mp3');
 	
@@ -19,10 +19,14 @@ $_('grapeTweet').main(function(){
   	this.account= {
 		name : 'account',
 		unreadMessages : 0,
-		userId : 0,
-		push : false,
-		pushServerId : 0,
-		pushEndpoint : ''
+		userId : 0
+	};
+	
+	this.pushServer= {
+		name : 'pushServer',
+		ready : false,
+		id : 0,
+		endpoint : ''
 	};
 	
 	this.dataStatus= {
@@ -30,8 +34,10 @@ $_('grapeTweet').main(function(){
 		lastDM_in : '',
 		lastDM_out : '',
 		lastChat : '',
-		lastTweets : [],
-		conversationsStatus : {}
+		lastTweets : {
+			timeline : 0
+		},
+		loadingChunk : false
 	};
 	
 	this.syncStatus= {
@@ -69,18 +75,18 @@ $_('grapeTweet').main(function(){
 	};
 	
 	var requestNewEndpoint= function(){
-		if(!app.account.push){
+		if(!app.pushServer.ready){
 			var requestPush= $$.navigator.push.register();
 	
 			requestPush.onsuccess= function(){
-				app.pushServer.request('/register', $$.JSON.stringify({ endpoint : requestPush.result })).then(function(data){
+				app.pushServerSocket.request('/register', $$.JSON.stringify({ endpoint : requestPush.result })).then(function(data){
 					data= $$.JSON.parse(data);
-					app.pushServer.request('/verify', $$.JSON.stringify({
+					app.pushServerSocket.request('/verify', $$.JSON.stringify({
 						id : data.clientId,
 						x1 : app.twitterSocket.exposeToken()[0],
 						x2 : app.twitterSocket.exposeToken()[1]
 					})).then(function(){
-						app.setState({ name : 'account', pushServerId : data.clientId, push : true, pushEndpoint : requestPush.result });
+						app.setState({ name : 'pushServer', id : data.clientId, ready : true, endpoint : requestPush.result });
 						$$.console.log('push-server successfully registered!');
 					});
 				});
@@ -99,11 +105,11 @@ $_('grapeTweet').main(function(){
 				var request= $$.navigator.push.register();
 				
 				request.onsuccess= function(){
-					app.pushServer.request('/updateEndpoint', $$.JSON.stringify({ id : app.account.pushServerId, endpoint : request.result })).then(function(data){
+					app.pushServerSocket.request('/updateEndpoint', $$.JSON.stringify({ id : app.pushServer.id, endpoint : request.result })).then(function(data){
 						data= $$.JSON.parse(data);
 						
 						if(data.status != 'failed'){
-							app.setState({ name : 'account', pushEndpoint : request.result });
+							app.setState({ name : 'pushServer', endpoint : request.result });
 							$$.console.log('push-endpoint successfully updated!');
 						}else{
 							$$.console.error('push-endpoint update failed');
@@ -142,37 +148,33 @@ $_('grapeTweet').main(function(){
     	this.twitterSocket.request('/statuses/home_timeline.json', { count : 50, include_entities : 'true'});
   	};
 	
-	this.notify= function(message){
-		if(message.sender_id != app.account.userId){
-			app.ui.renderConversations(app);
-			
-			var count= app.account.unreadMessages;
-			if(count > 0)
-				count++;
-			else
-				count= 1;
-			app.setState({
-				name : 'account',
-				unreadMessages : count
-			});
-			app.ui.renderFooterStatus(app.account);
-			
-			if($$.document.hidden || $$.location.hash.indexOf('/messages') < 0){
-				var notification= new $$.Notification(message.sender.name, {
-					body : message.text.substr(0, 40),
-					tag : message.sender_id,
-					icon : message.sender.profile_image_url
-				});
+	this.notify= function(conversationId){
+		app.storage.getConversation(conversationId).then(function(conversation){
+			app.storage.getMessage(conversation.lastMessage).then(function(message){
+				if(message.sender_id != app.account.userId){
+					app.ui.renderConversations(app);
+					app.ui.renderFooterStatus(app.account);
+				
+					if($$.document.hidden || $$.location.hash.indexOf('/messages') < 0 || ($$.location.hash.indexOf('/chat') > -1 && app.dataStatus.lastChat != message.sender_id)){
+						var textBody= (conversation.unread < 2) ? app.misc.cutdown(message.text) : conversation.unread + ' new messages';
+						
+						var notification= new $$.Notification(message.sender.name, {
+							body : textBody,
+							tag : message.sender_id,
+							icon : message.sender.profile_image_url
+						});
 		
-				notification.addEventListener('click', notificationClick, false);
-			}else{
-				app.messageInSound.play();
-			}
-		}else if(!$$.document.hidden){
-			app.messageOutSound.play();
-		}
+						notification.addEventListener('click', notificationClick, false);
+					}else{
+						app.messageInSound.play();
+					}	
+				}else if(!$$.document.hidden){
+					app.messageOutSound.play();
+				}
+			});
+		});
 	};
-	
+			
 	this.show= function(){
 		if($$.document.hidden){
 			$$.navigator.mozApps.getSelf().onsuccess= function(e){
@@ -214,6 +216,55 @@ $_('grapeTweet').main(function(){
 			
 //			chat
 			$('dom').select('.client').classList.remove('footer-closed');
+		}
+	}, false);
+	
+//	chat text box
+	$('dom').select('.page.chat .send').addEventListener('click', function(){
+		var message= $('dom').select('.page.chat .text-box .text');
+		if(message.textContent !== ""){
+			app.net.sendDirectMessage(app, message.textContent).then(function(){
+				message.textContent= '';
+			});
+		}
+	}, false);
+	
+	$('dom').select('.page.chat .send').addEventListener('mousedown', function(e){
+		e.preventDefault();
+		e.target.classList.add('active');
+	}, false);
+	
+	$('dom').select('.page.chat .text-box .text').addEventListener('keypress', function(e){
+		if(e.which == 13){
+			e.preventDefault();
+			var message= $('dom').select('.page.chat .text-box .text');
+			app.net.sendDirectMessage(app, message.textContent).then(function(){
+				message.textContent= '';
+			});
+		}
+	}, false);
+	
+//	chat scrollTop
+	$('dom').select('.page.chat .body').addEventListener('scroll', function(e){
+		if(e.target.scrollTop === 0 && !app.dataStatus.loadingChunk){
+			app.setState({
+				name : 'dataStatus',
+				loadingChunk : true
+			});
+			app.ui.renderAdditionalChunk(app).then(function(){
+				app.setState({
+					name : 'dataStatus',
+					loadingChunk : false
+				});
+			});
+		}
+	}, false);
+	
+//	visibilty change
+	$$.addEventListener('visibiltychange', function(){
+		if($$.location.hash.indexOf('/chat') > -1){
+			var chatPage= $('dom').select('.message-list');
+			app.ui.renderChat(app, chatPage.dataset.userId);
 		}
 	}, false);
   
@@ -284,15 +335,17 @@ $_('grapeTweet').main(function(){
 						});
 						done();
 					});
+					code.classList.add('hidden');
+					verify.classList.add('hidden');
+					$('dom').select('.splash .loading').classList.remove('hidden');
 				}, false);
 			}, false);
     
   		}else{
 			done();
+			$('dom').select('.splash .loading').classList.remove('hidden');
 		}
 	})).then(function(){
-		$('dom').select('.splash .loading').classList.remove('hidden');
-		
 		app.jobs.push(new Promise(function(done){			
 			app.storage.checkDirectMessages().then(function(directMessagesStored){
 				if(!directMessagesStored)
@@ -306,7 +359,8 @@ $_('grapeTweet').main(function(){
 			$$.Promise.all([
 				app.storage.getApplicationState('account'), 
 				app.storage.getApplicationState('dataStatus'), 
-				app.storage.getApplicationState('syncStatus')
+				app.storage.getApplicationState('syncStatus'),
+				app.storage.getApplicationState('pushServer')
 			]).then(function(values){
 				values.forEach(function(item){
 					if(item)
@@ -334,7 +388,7 @@ $_('grapeTweet').main(function(){
 				requestNewEndpoint();
 			});
 			
-			if(!app.account.push){
+			if(!app.pushServer.ready){
 				requestNewEndpoint();
 			}else{
 				$$.console.log('push server already registered!');	 
@@ -344,18 +398,41 @@ $_('grapeTweet').main(function(){
 //				the app is ready, so we are ready to handle pushs 
 				$$.navigator.mozSetMessageHandler('push', function(e){
 					$$.console.log('new push version: '+ e.version);
-					app.pushServer.request('/pull', $$.JSON.stringify({ id : app.account.pushServerId })).then(function(record){
-						record= $$.JSON.parse(record);
+					$$.Promise.all([app.pushServerSocket.request('/pull', $$.JSON.stringify({ id : app.pushServer.id })), app.storage.getConversationsList()]).then(function(values){
+						var record= $$.JSON.parse(values[0]);
+						var conversations= values[1];
+						
 						record.forEach(function(item){
 							if(item.type == 'direct_message'){
-								app.storage.storeMessage(item).then(function(){
+								var convId= (item.sender_id == app.account.userId) ? item.recipient_id : item.sender_id;
+								var last= conversations[convId].lastMessage;
+								
+								item.last= conversations[convId].lastMessage;
+								conversations[convId].unread= (conversations[convId].unread > 0) ? conversations[convId].unread+1 : 1;
+								conversations[convId].lastMessage= item.id_str;
+								app.setState({
+									name : 'account',
+									unreadMessages : (app.account.unreadMessages > 0) ? app.account.unreadMessages+1 : 1
+								});
+								
+								$$.Promise.all([
+									app.storage.storeConversation(conversations[convId]), app.storage.storeMessage(item),
+									
+									new Promise(function(done){
+										app.storage.getMessage(last).then(function(message){
+											message.next= item.id_str;
+											app.storage.storeMessage(message).then(done);
+										});
+									}),
+								]).then(function(){
+									app.notify(convId);
+									
 									var chatPage= $('dom').select('.message-list');
-									if(item.sender_id == chatPage.dataset.userId || item.recipient_id == chatPage.dataset.userId)
+									if(!$$.document.hidden && $$.location.hash.indexOf('/chat') > -1)
 										app.ui.renderChat(app, chatPage.dataset.userId);
 								});
-								app.notify(item);
 							}else if(item.type == 'server_crash'){
-								app.pushServer.request('/reverify', $$.JSON.stringify({
+								app.pushServerSocket.request('/reverify', $$.JSON.stringify({
 									id : app.account.pushServerId,
 									x1 : app.twitterSocket.exposeToken()[0],
 									x2 : app.twitterSocket.exposeToken()[1]

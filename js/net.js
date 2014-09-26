@@ -9,6 +9,7 @@ $_('grapeTweet').module('net', function(done){
 			return new $$.Promise(function(done){
 				var max_id_in= 0;
 				var max_id_out= 0;
+				var conversations= {};
 			
 				var loopIn= new AsyncLoop(function(next, exit){
 					var request= null;
@@ -38,9 +39,10 @@ $_('grapeTweet').module('net', function(done){
 								});
 							}	
 							
-							app.storage.storeMessage(item).catch(function(e){
-								$$.console.log(e);
-							});
+							conversations[item.sender_id]= conversations[item.sender_id] || [];
+							conversations[item.sender_id].push(item);
+
+							
 							max_id_in= item.id_str;
 						});
 					
@@ -78,9 +80,9 @@ $_('grapeTweet').module('net', function(done){
 								});
 							}
 					
-							app.storage.storeMessage(item).catch(function(e){
-								$$.console.log(e);
-							});
+							conversations[item.recipient_id]= conversations[item.recipient_id] || [];
+							conversations[item.recipient_id].push(item);
+
 							max_id_out= item.id_str;
 						});
 					
@@ -90,7 +92,25 @@ $_('grapeTweet').module('net', function(done){
 					request.catch(exit);
 				});
 			
-				$$.Promise.all([loopIn.incalculable(), loopOut.incalculable()]).then(done);
+				$$.Promise.all([loopIn.incalculable(), loopOut.incalculable()]).then(function(){
+					$$.Object.keys(conversations).forEach(function(key){
+						conversations[key].sort(app.misc.sortByDate);
+						conversations[key].forEach(function(message, index){
+							message.last= (index-1 > -1) ? conversations[key][index-1].id_str : null;
+							message.next= (index+1 < conversations[key].length) ? conversations[key][index+1].id_str : null;
+							app.storage.storeMessage(message).catch($$.console.log);
+						});
+						
+						app.storage.storeConversation({
+							id : key,
+							lastMessage : conversations[key].last().id_str,
+							lastReadMessage : null,
+							unread : 0,
+						});
+					});
+					
+					done();
+				});
 			});
 		},
 		
@@ -354,7 +374,7 @@ $_('grapeTweet').module('net', function(done){
 		},
 		
 		cacheImage : function(url, app){
-			return new Promise(function(done){
+			return new $$.Promise(function(done){
 				if(app.cache.images[url])
 					done(app.cache.images[url]);
 				else{
@@ -364,6 +384,25 @@ $_('grapeTweet').module('net', function(done){
 						done(blob_url);
 					});
 				}
+			});
+		},
+		
+		sendDirectMessage : function(app, text){
+			return new $$.Promise(function(done){
+				var request= app.twitterSocket.request('/1.1/direct_messages/new.json', { user_id : app.dataStatus.lastChat, text : text });
+				request.then(done);
+				request.catch(function(e){
+					$$.console.error(e);
+				});
+			});
+		},
+		
+		fetchNewHomeTweets : function(app){
+			return new $$.Promise(function(done){
+				app.twitterSocket.get('/1.1/statuses/home_timeline.json', { trim_user : true,  count : 100, since_id : app.dataStatus.lastTweets.timeline }).then(function(tweets){
+					tweets= $$.JSON.parse(tweets);
+					done();
+				});
 			});
 		}
 	});
