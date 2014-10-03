@@ -2,7 +2,52 @@ $_('grapeTweet').module('ui', function(done){
 	
 	var client= $('dom').select('.client.twitter');
 	
-	done({
+	var renderMessage= function(item, contact, app){	
+		var template_default= $('dom').select('#chat-message-layout').content;
+		var template_my= $('dom').select('#chat-my-message-layout').content;
+		var list= $('dom').select('.message-list');
+		
+		if(item.sender_id == app.account.userId){
+			var element= template_my.cloneNode(true);
+			element.querySelector('.message').dataset.id= item.id_str;
+		}else{
+			var element= template_default.cloneNode(true);
+			element.querySelector('.user-image').style.setProperty('background-image', 'url('+ contact.profile_image_url +')');
+			element.querySelector('.message').dataset.id= item.id_str;
+		}
+							
+//		format text
+		interface.renderEntities(item.text, item.entities, element.querySelector('.text'), app);
+							
+//		timestamp
+		var date= new Date(item.created_at);
+		element.querySelector('.date').textContent= date.toLocaleDateString() + ', ' + date.toLocaleTimeString();
+							
+		list.appendChild(element);
+	};
+	
+	var getTimeSince= function(timeSting){
+		var now= new Date();
+		var from= new Date(timeSting);
+		var time= new Date(now - from);
+
+		if(time.getYear() - 70 > 0)
+			return (time.getYear() - 70) + 'Y';
+		else if(time.getMonth() > 0)
+			return time.getMonth() + 'M';
+		else if(time.getDate() - 1 > 0)
+			return (time.getDate() - 1) + 'd';
+		else if(time.getHours() - 1 > 0)
+			return (time.getHours() - 1) + 'h';
+		else if(time.getMinutes() > 0)
+			return time.getMinutes() + 'm';
+		else if(time.getSeconds() > 0)
+			return time.getSeconds() + 's';
+		else
+			return 'now';
+	};
+	
+	var interface= {
 		switchSheet : function(selector){
 			var activeSheet= $('dom').select('.sheet.active');
 			var newSheet= $('dom').select(selector);
@@ -94,7 +139,7 @@ $_('grapeTweet').module('ui', function(done){
 							else
 								element.querySelector('.username').textContent= '@' + user.screen_name;
 				
-							element.querySelector('.datetime').textContent= app.ui.getTimeSince(latest.created_at);
+							element.querySelector('.datetime').textContent= getTimeSince(latest.created_at);
 							element.querySelector('.conv-body .text').textContent= ((latest.text.length <= 40) ? latest.text : latest.text.substr(0, 40) + '...');
 				
 							list.appendChild(element);
@@ -106,38 +151,15 @@ $_('grapeTweet').module('ui', function(done){
 			});
 		},
 		
-		renderChat : function(app, userId){
-			var self= this;
-			
+		renderChat : function(app, userId){			
 			return new $$.Promise(function(done){
 				$$.Promise.all([app.storage.getConversation(userId), app.storage.getContact(userId)]).then(function(values){
 					var conversation= values[0];
 					var contact= values[1];
 					var list= $('dom').select('.message-list');
 					var userImage= $('dom').select('.page.chat .header-user-image');
-					var template_default= $('dom').select('#chat-message-layout').content;
-					var template_my= $('dom').select('#chat-my-message-layout').content;
+
 					var body= $('dom').select('.page.chat .body');		
-					
-					var createMessage= function(item){									
-						if(item.sender_id == app.account.userId){
-							var element= template_my.cloneNode(true);
-							element.querySelector('.message').dataset.id= item.id_str;
-						}else{
-							var element= template_default.cloneNode(true);
-							element.querySelector('.user-image').style.setProperty('background-image', 'url('+ contact.profile_image_url +')');
-							element.querySelector('.message').dataset.id= item.id_str;
-						}
-							
-//						format text
-						self.renderEntities(item.text, item.entities, element.querySelector('.text'), app);
-							
-//						timestamp
-						var date= new Date(item.created_at);
-						element.querySelector('.date').textContent= date.toLocaleDateString() + ', ' + date.toLocaleTimeString();
-							
-						list.appendChild(element);
-					};
 					
 //					close notification for this conversation
 					$$.Notification.get().then(function(list){
@@ -169,7 +191,9 @@ $_('grapeTweet').module('ui', function(done){
 						if(differentConv){
 							app.storage.getMessagesChunkBefore(conversation.lastMessage, true).then(function(messages){
 								messages.sort(app.misc.sortByDate);
-								messages.forEach(createMessage);
+								messages.forEach(function(item){
+									renderMessage(item, contact, app);
+								});
 														
 								app.setState({
 									name : 'account',
@@ -188,7 +212,9 @@ $_('grapeTweet').module('ui', function(done){
 							app.storage.getNewMessagesSince(conversation.lastReadMessage).then(function(messages){
 								if(messages.length > 0){
 									messages.sort(app.misc.sortByDate);
-									messages.forEach(createMessage);
+									messages.forEach(function(item){
+										renderMessage(item, contact, app);
+									});
 							
 									app.setState({
 										name : 'account',
@@ -210,9 +236,7 @@ $_('grapeTweet').module('ui', function(done){
 			});
 		},
 		
-		renderAdditionalChunk : function(app){
-			var self= this;
-			
+		renderAdditionalChunk : function(app){			
 			return new Promise(function(done){
 				var lastElement= $('dom').select('.page.chat .message-list li');
 				var body= $('dom').select('.page.chat .body');		
@@ -221,32 +245,11 @@ $_('grapeTweet').module('ui', function(done){
 				$$.Promise.all([app.storage.getMessagesChunkBefore(lastElement.dataset.id, false), app.storage.getContact(app.dataStatus.lastChat)]).then(function(values){
 					var messages= values[0].sort(app.misc.sortByDate);
 					var contact= values[1];
-					var list= $('dom').select('.message-list');
-					var template_default= $('dom').select('#chat-message-layout').content;
-					var template_my= $('dom').select('#chat-my-message-layout').content;
 					
-					var createMessage= function(item){									
-						if(item.sender_id == app.account.userId){
-							var element= template_my.cloneNode(true);
-							element.querySelector('.message').dataset.id= item.id_str;
-						}else{
-							var element= template_default.cloneNode(true);
-							element.querySelector('.user-image').style.setProperty('background-image', 'url('+ contact.profile_image_url +')');
-							element.querySelector('.message').dataset.id= item.id_str;
-						}
-							
-//						format text
-						self.renderEntities(item.text, item.entities, element.querySelector('.text'), app);
-							
-//						timestamp
-						var date= new Date(item.created_at);
-						element.querySelector('.date').textContent= date.toLocaleDateString() + ', ' + date.toLocaleTimeString();
-							
-						list.insertBefore(element, lastElement);
-						lastElement= list.querySelector('li');
-					};
+					messages.forEach(function(item){
+						renderMessage(item, contact, app);
+					});
 					
-					messages.forEach(createMessage);
 					body.scrollTop= body.scrollHeight - scrollHeight - 20;
 					done();
 				});
@@ -273,7 +276,7 @@ $_('grapeTweet').module('ui', function(done){
 			}
 		
 //			set text
-			target.appendChild($$.document.createTextNode(text));
+			target.innerHTML+= text;
 		},
 		
 		renderFooterStatus : function(account){
@@ -284,27 +287,8 @@ $_('grapeTweet').module('ui', function(done){
 			}else{
 				label.classList.add('hidden');
 			}
-		},
-		
-		getTimeSince : function(timeSting){
-			var now= new Date();
-			var from= new Date(timeSting);
-			var time= new Date(now - from);
-			
-			if(time.getYear() - 70 > 0)
-				return (time.getYear() - 70) + 'Y';
-			else if(time.getMonth() > 0)
-				return time.getMonth() + 'M';
-			else if(time.getDate() - 1 > 0)
-				return (time.getDate() - 1) + 'd';
-			else if(time.getHours() - 1 > 0)
-				return (time.getHours() - 1) + 'h';
-			else if(time.getMinutes() > 0)
-				return time.getMinutes() + 'm';
-			else if(time.getSeconds() > 0)
-				return time.getSeconds() + 's';
-			else
-				return 'now';
 		}
-	});
+	};
+	
+	done(interface);
 });

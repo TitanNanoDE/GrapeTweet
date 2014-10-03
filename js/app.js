@@ -10,7 +10,7 @@ $_('grapeTweet').main(function(){
 	};
   
   	this.twitterSocket= new OAuthClient('twitter', 'https://api.twitter.com', 'gC7HaQ7T4u8HYGgRIhiLz0xGs', 'vNOVVig70BQl0pXjzpaU7Mf88Jd6O2gzTQ6FavnGUTalGtnMM1', { mozSystem : true });
-	this.pushServerSocket= new Socket(Socket.HTTP, 'http://grapetweet-titannano.rhcloud.com/',  { mozSystem : true });
+	this.pushServerSocket= new Socket(Socket.HTTP, 'http://grapetweet-titannano.rhcloud.com',  { mozSystem : true });
 	this.messageInSound= new $$.Audio('/sounds/recived.mp3');
 	this.messageOutSound= new $$.Audio('/sounds/sent.mp3');
 	
@@ -26,7 +26,8 @@ $_('grapeTweet').main(function(){
 		name : 'pushServer',
 		ready : false,
 		id : 0,
-		endpoint : ''
+		endpoint : '',
+		lastRefresh : 0
 	};
 	
 	this.dataStatus= {
@@ -86,7 +87,7 @@ $_('grapeTweet').main(function(){
 						x1 : app.twitterSocket.exposeToken()[0],
 						x2 : app.twitterSocket.exposeToken()[1]
 					})).then(function(){
-						app.setState({ name : 'pushServer', id : data.clientId, ready : true, endpoint : requestPush.result });
+						app.setState({ name : 'pushServer', id : data.clientId, ready : true, endpoint : requestPush.result, lastRefresh : Date.now() });
 						$$.console.log('push-server successfully registered!');
 					});
 				});
@@ -109,7 +110,7 @@ $_('grapeTweet').main(function(){
 						data= $$.JSON.parse(data);
 						
 						if(data.status != 'failed'){
-							app.setState({ name : 'pushServer', endpoint : request.result });
+							app.setState({ name : 'pushServer', endpoint : request.result, lastRefresh : Date.now() });
 							$$.console.log('push-endpoint successfully updated!');
 						}else{
 							$$.console.error('push-endpoint update failed');
@@ -144,10 +145,6 @@ $_('grapeTweet').main(function(){
 		app.storage.saveApplicationState(app[name]);
 	};
 	
-	this.loadTimeline= function(){
-    	this.twitterSocket.request('/statuses/home_timeline.json', { count : 50, include_entities : 'true'});
-  	};
-	
 	this.notify= function(conversationId){
 		app.storage.getConversation(conversationId).then(function(conversation){
 			app.storage.getMessage(conversation.lastMessage).then(function(message){
@@ -181,6 +178,47 @@ $_('grapeTweet').main(function(){
 				e.target.result.launch();
     		};
   		}	
+	};
+	
+	this.createConversation= function(id, lastmessage, unread){
+		return {
+			id : id,
+			lastMessage : lastmessage,
+			lastReadMessage : null,
+			unread : unread
+		};
+	};
+	
+	this.integrateIntoMessagesChain= function(message, conversation){
+		return new Promise(function(done){
+			if(conversation && conversation.lastMessage != message.id_str){
+				message.last= conversation.lastMessage;
+				message.next= null;
+				
+				conversation.lastMessage= message.id_str;
+				if(message.sender_id != app.account.userId)
+					conversation.unread= (conversation.unread > 0) ? conversation.unread+1 : 1;
+				
+				$$.Promise.all([app.storage.storeMessage(message), app.storage.storeConversation(conversation)]).then(function(){
+					app.storage.getMessage(message.last).then(function(oldMessage){
+						oldMessage.next= message.id_str;
+						app.storage.storeMessage(oldMessage).then(done);
+					});
+				});
+			}else if(conversation){
+				app.storage.getMessage(message.id_str).then(function(oldMessage){
+					message.last= oldMessage.last;
+					message.next= oldMessage.next;
+					app.storage.storeMessage(message).then(done);
+				});
+			}else{
+				var convId= (message.sender_id == app.account.userId) ? message.recipient_id : message.sender_id;
+				message.last= null;
+				message.next= null;
+				
+				$$.Promise.all([ app.storage.storeConversation(app.createConversation(convId, message.id_str, (message.sender_id != app.account.userId) ? 1 : 0)), app.storage.storeMessage(message) ]).then(done);
+			}
+		});
 	};
 	
 //	mouse events for lists
@@ -390,6 +428,8 @@ $_('grapeTweet').main(function(){
 			
 			if(!app.pushServer.ready){
 				requestNewEndpoint();
+			}else if( (Date.now() - app.pushServer.lastRefresh) > 7200000){
+				requestNewEndpoint();
 			}else{
 				$$.console.log('push server already registered!');	 
 			}
@@ -405,26 +445,8 @@ $_('grapeTweet').main(function(){
 						record.forEach(function(item){
 							if(item.type == 'direct_message'){
 								var convId= (item.sender_id == app.account.userId) ? item.recipient_id : item.sender_id;
-								var last= conversations[convId].lastMessage;
-								
-								item.last= conversations[convId].lastMessage;
-								conversations[convId].unread= (conversations[convId].unread > 0) ? conversations[convId].unread+1 : 1;
-								conversations[convId].lastMessage= item.id_str;
-								app.setState({
-									name : 'account',
-									unreadMessages : (app.account.unreadMessages > 0) ? app.account.unreadMessages+1 : 1
-								});
-								
-								$$.Promise.all([
-									app.storage.storeConversation(conversations[convId]), app.storage.storeMessage(item),
-									
-									new Promise(function(done){
-										app.storage.getMessage(last).then(function(message){
-											message.next= item.id_str;
-											app.storage.storeMessage(message).then(done);
-										});
-									}),
-								]).then(function(){
+
+								app.integrateIntoMessagesChain(item, conversations[convId]).then(function(){
 									app.notify(convId);
 									
 									var chatPage= $('dom').select('.message-list');
@@ -433,7 +455,7 @@ $_('grapeTweet').main(function(){
 								});
 							}else if(item.type == 'server_crash'){
 								app.pushServerSocket.request('/reverify', $$.JSON.stringify({
-									id : app.account.pushServerId,
+									id : app.pushServer.id,
 									x1 : app.twitterSocket.exposeToken()[0],
 									x2 : app.twitterSocket.exposeToken()[1]
 								})).then();

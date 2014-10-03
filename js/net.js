@@ -101,12 +101,7 @@ $_('grapeTweet').module('net', function(done){
 							app.storage.storeMessage(message).catch($$.console.log);
 						});
 						
-						app.storage.storeConversation({
-							id : key,
-							lastMessage : conversations[key].last().id_str,
-							lastReadMessage : null,
-							unread : 0,
-						});
+						app.storage.storeConversation(app.createConversation(key, conversations[key].last().id_str, 0));
 					});
 					
 					done();
@@ -168,9 +163,10 @@ $_('grapeTweet').module('net', function(done){
 									lastDM_out : item.id_str
 								});
 							}
-					
-							app.storage.storeMessage(item).catch(function(e){
-								$$.console.log(e);
+							var convId= (item.sender_id != app.account.userId) ? item.sender_id : item.recipient_id;
+							
+							app.storage.getConversation(convId).then(function(conversation){
+								app.integrateIntoMessagesChain(item, conversation);
 							});
 						});
 					
@@ -390,7 +386,17 @@ $_('grapeTweet').module('net', function(done){
 		sendDirectMessage : function(app, text){
 			return new $$.Promise(function(done){
 				var request= app.twitterSocket.request('/1.1/direct_messages/new.json', { user_id : app.dataStatus.lastChat, text : text });
-				request.then(done);
+				
+				$$.Promise.all([request, app.storage.getConversation(app.dataStatus.lastChat)]).then(function(values){
+					var message= $$.JSON.parse(values[0]);
+					var conversation= values[1];
+					
+					message.placeholder= true;
+					
+					app.integrateIntoMessagesChain(message, conversation).then(function(){
+						app.ui.renderChat(app, app.dataStatus.lastChat).then(done);
+					});
+				});
 				request.catch(function(e){
 					$$.console.error(e);
 				});
