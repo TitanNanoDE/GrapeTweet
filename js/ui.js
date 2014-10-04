@@ -2,10 +2,11 @@ $_('grapeTweet').module('ui', function(done){
 	
 	var client= $('dom').select('.client.twitter');
 	
-	var renderMessage= function(item, contact, app){	
+	var renderMessage= function(item, contact, app, insertBefore){	
 		var template_default= $('dom').select('#chat-message-layout').content;
 		var template_my= $('dom').select('#chat-my-message-layout').content;
 		var list= $('dom').select('.message-list');
+		var firstElement= $('dom').select('.page.chat .message-list li');
 		
 		if(item.sender_id == app.account.userId){
 			var element= template_my.cloneNode(true);
@@ -22,8 +23,11 @@ $_('grapeTweet').module('ui', function(done){
 //		timestamp
 		var date= new Date(item.created_at);
 		element.querySelector('.date').textContent= date.toLocaleDateString() + ', ' + date.toLocaleTimeString();
-							
-		list.appendChild(element);
+		
+		if(!insertBefore)
+			list.appendChild(element);
+		else
+			list.insertBefore(element, firstElement);
 	};
 	
 	var getTimeSince= function(timeSting){
@@ -242,17 +246,21 @@ $_('grapeTweet').module('ui', function(done){
 				var body= $('dom').select('.page.chat .body');		
 				var scrollHeight= body.scrollHeight;
 				
-				$$.Promise.all([app.storage.getMessagesChunkBefore(lastElement.dataset.id, false), app.storage.getContact(app.dataStatus.lastChat)]).then(function(values){
-					var messages= values[0].sort(app.misc.sortByDate);
-					var contact= values[1];
-					
-					messages.forEach(function(item){
-						renderMessage(item, contact, app);
+				if(lastElement){
+					$$.Promise.all([app.storage.getMessagesChunkBefore(lastElement.dataset.id, false), app.storage.getContact(app.dataStatus.lastChat)]).then(function(values){
+						var messages= values[0].sort(app.misc.sortByDate);
+						var contact= values[1];
+						
+						messages.reverse().forEach(function(item){
+							renderMessage(item, contact, app, true);
+						});
+						
+						body.scrollTop= body.scrollHeight - scrollHeight - 20;
+						done();
 					});
-					
-					body.scrollTop= body.scrollHeight - scrollHeight - 20;
+				}else{
 					done();
-				});
+				}
 			});
 		},
 										
