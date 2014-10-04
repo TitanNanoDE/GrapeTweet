@@ -119,7 +119,8 @@ $_('grapeTweet').main(function(){
 				};
 				
 				request.onerror= function(e){
-					$$.console.error('D: we couldn\'t get a new endpoint!! ' + $$.JSON.stringify(e));
+					$$.console.error('D: we couldn\'t get a new endpoint!! ' + $$.JSON.stringify(e) + ' Retry in 10 seconds!');
+					$$..setTimeout(requestNewEndpoint, 10000);
 				};
 				
 				$$.console.log('push-enpoint update requested...');
