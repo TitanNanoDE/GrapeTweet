@@ -151,7 +151,7 @@ $_('grapeTweet').main(function(){
 		app.storage.getConversation(conversationId).then(function(conversation){
 			app.storage.getMessage(conversation.lastMessage).then(function(message){
 				if(message.sender_id != app.account.userId){
-					app.ui.renderConversations(app);
+					app.ui.renderChats(app);
 					app.ui.renderFooterStatus(app.account);
 				
 					if($$.document.hidden || $$.location.hash.indexOf('/messages') < 0 || ($$.location.hash.indexOf('/chat') > -1 && app.dataStatus.lastChat != message.sender_id)){
@@ -356,7 +356,7 @@ $_('grapeTweet').main(function(){
   	$('hash').mount('/messages/chat', function(){
 		app.ui.pagesToLeft('messages', 'conversations', 'chat');
 	}, function(){
-		app.ui.renderConversations(app);
+		app.ui.renderChats(app);
 		app.ui.pagesFromLeft('messages', 'chat', 'conversations');
   	}, true);
   
@@ -443,7 +443,7 @@ $_('grapeTweet').main(function(){
 		$$.Promise.all(app.jobs).then(function(){
 			app.jobs= [];
 		
-			app.jobs.push(app.ui.renderConversations(app));
+			app.jobs.push(app.ui.renderChats(app));
 			app.jobs.push(new $$.Promise(function(done){
 				$('hash').restore();
 			

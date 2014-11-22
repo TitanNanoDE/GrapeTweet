@@ -19,7 +19,7 @@ $_('grapeTweet').module('ui', function(done){
 		}
 							
 //		format text
-		interface.renderEntities(item.text, item.entities, element.querySelector('.text'), app);
+		renderEntities(item.text, item.entities, element.querySelector('.text'), app);
 							
 //		timestamp
 		var date= new Date(item.created_at);
@@ -30,6 +30,31 @@ $_('grapeTweet').module('ui', function(done){
 		else
 			list.insertBefore(element, firstElement);
 	};
+    
+    var renderEntities= function(text, entities, target, app){
+//      add medias
+        if(entities.media){
+            entities.media.forEach(function(item){
+                if(item.type == 'photo'){
+                    text= text.replace(item.url, '');
+                    var img= $('dom').create('img');
+                    var chatBody= $('dom').select('.page.chat .body');
+                    var scrollHeightBefore= chatBody.scrollHeight;
+                        
+                    img.onload= function(){
+                        chatBody.scrollTop= (chatBody.scrollTop / scrollHeightBefore / 100) * (chatBody.scrollHeight / 100);
+                    };
+                    target.appendChild(img);
+                    app.net.cacheImage(item.media_url, app).then(function(url){
+                        img.src= url;
+                    });
+                }
+            });
+        }
+		
+//	    set text
+        target.innerHTML+= text;
+    };
 	
 	var getTimeSince= function(timeSting){
 		var now= new Date();
@@ -104,7 +129,7 @@ $_('grapeTweet').module('ui', function(done){
 			});
 		},
 		
-		renderConversations : function(app){
+		renderChats : function(app){
 			return new Promise(function(done){
 				app.storage.getConversationsList().then(function(conversations){
 					var promises= [];
@@ -264,32 +289,7 @@ $_('grapeTweet').module('ui', function(done){
 				}
 			});
 		},
-										
-		renderEntities : function(text, entities, target, app){
-//			add medias
-			if(entities.media){
-				entities.media.forEach(function(item){
-					if(item.type == 'photo'){
-						text= text.replace(item.url, '');
-						var img= $('dom').create('img');
-                        var chatBody= $('dom').select('.page.chat .body');
-                        var scrollHeightBefore= chatBody.scrollHeight;
-                        
-						img.onload= function(){
-							chatBody.scrollTop= (chatBody.scrollTop / scrollHeightBefore / 100) * (chatBody.scrollHeight / 100);
-						};
-						target.appendChild(img);
-						app.net.cacheImage(item.media_url, app).then(function(url){
-							img.src= url;
-						});
-					}
-				});
-			}
-		
-//			set text
-			target.innerHTML+= text;
-		},
-		
+
 		renderFooterStatus : function(account){
 			var label= $('dom').select('.footer .messages .count');
 			if(account.unreadMessages > 0){
