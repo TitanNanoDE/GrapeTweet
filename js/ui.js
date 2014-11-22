@@ -208,12 +208,7 @@ $_('grapeTweet').module('ui', function(done){
 							
 						userImage.style.setProperty('background-image', 'url('+ contact.profile_image_url +')');
 						userImage.href= '#!/profile/'+ contact.id;
-						
-						app.setState({
-							name : 'dataStatus',
-							lastChat : contact.id_str
-						});
-						
+						app.dataStatus.lastChat= contact.id_str;
 						list.dataset.userId= contact.id;
 					}
 					
@@ -225,10 +220,7 @@ $_('grapeTweet').module('ui', function(done){
 									renderMessage(item, contact, app);
 								});
 														
-								app.setState({
-									name : 'account',
-									unreadMessages : app.account.unreadMessages-conversation.unread
-								});
+								app.account.unreadMessages= app.account.unreadMessages-conversation.unread;
 								
 								conversation.lastReadMessage= messages.last().id_str;
 								conversation.unread= 0;
@@ -246,11 +238,7 @@ $_('grapeTweet').module('ui', function(done){
 										renderMessage(item, contact, app);
 									});
 							
-									app.setState({
-										name : 'account',
-										unreadMessages : app.account.unreadMessages-conversation.unread
-									});
-									
+									app.account.unreadMessages= app.account.unreadMessages-conversation.unread;
 									conversation.lastReadMessage= messages.last().id_str;
 									conversation.unread= 0;
 									app.storage.storeConversation(conversation);

@@ -33,10 +33,7 @@ $_('grapeTweet').module('net', function(done){
 							delete item.sender;
 					
 							if(app.dataStatus.lastDM_in === ''){
-								app.setState({
-									name : 'dataStatus',
-									lastDM_in : item.id_str
-								});
+								app.dataStatus.lastDM_in= item.id_str;
 							}	
 							
 							conversations[item.sender_id]= conversations[item.sender_id] || [];
@@ -74,10 +71,7 @@ $_('grapeTweet').module('net', function(done){
 							delete item.sender;
 						
 							if(app.dataStatus.lastDM_out === ''){
-								app.setState({
-									name : 'dataStatus',
-									lastDM_out : item.id_str
-								});
+								app.dataStatus.lastDM_out= item.id_str;
 							}
 					
 							conversations[item.recipient_id]= conversations[item.recipient_id] || [];
@@ -127,10 +121,7 @@ $_('grapeTweet').module('net', function(done){
 							delete item.sender;
 					
 							if(index === 0){
-								app.setState({
-									name : 'dataStatus',
-									lastDM_in : item.id_str
-								});
+								app.dataStatus.lastDM_in= item.id_str;
 							}	
 							
 							app.storage.storeMessage(item).catch(function(e){
@@ -158,10 +149,7 @@ $_('grapeTweet').module('net', function(done){
 							delete item.sender;
 						
 							if(index === 0){
-								app.setState({
-									name : 'dataStatus',
-									lastDM_out : item.id_str
-								});
+								app.dataStatus.lastDM_out= item.id_str;
 							}
 							var convId= (item.sender_id != app.account.userId) ? item.sender_id : item.recipient_id;
 							
@@ -200,8 +188,7 @@ $_('grapeTweet').module('net', function(done){
 						data= $$.JSON.parse(data);
 					
 						follower= follower.concat(data.ids);
-						app.setState({
-							name : 'syncStatus',
+						app.syncStatus.apply({
 							contacts : {
 								nextFollowerCursor : data.next_cursor
 							}
@@ -210,8 +197,7 @@ $_('grapeTweet').module('net', function(done){
 					});
 						
 					request.catch(function(e){
-						app.setState({
-							name : 'syncStatus',
+						app.syncStatus.apply({
 							contacts : {
 								followerCache : follower
 							}
@@ -235,8 +221,7 @@ $_('grapeTweet').module('net', function(done){
 						data= $$.JSON.parse(data);
 					
 						following= following.concat(data.ids);
-						app.setState({
-							name : 'syncStatus',
+						app.syncStatus.apply({
 							contacts : {
 								nextFollowingCursor : data.next_cursor
 							}
@@ -245,8 +230,7 @@ $_('grapeTweet').module('net', function(done){
 					});
 					
 					request.catch(function(e){
-						app.setState({
-							name : 'syncStatus',
+						app.syncStatus.apply({
 							contacts : {
 								followingCache : follower
 							}
@@ -262,8 +246,7 @@ $_('grapeTweet').module('net', function(done){
 					
 					if(contactsList.length > 0){
 						
-						app.setState({
-							name : 'syncStatus',
+						app.syncStatus.apply({
 							contacts : {
 								fetchingInfo : true
 							}
@@ -291,8 +274,7 @@ $_('grapeTweet').module('net', function(done){
 						});
 						
 						request.catch(function(e){
-							app.setState({
-								name : 'syncStatus',
+							app.syncStatus.apply({
 								contacts : {
 									contactsCache : contactsList
 								}
@@ -302,8 +284,7 @@ $_('grapeTweet').module('net', function(done){
 							exit();
 						});
 					}else{
-						app.setState({
-							name : 'syncStatus',
+						app.syncStatus.apply({
 							contacts : {
 								fetchingInfo : false
 							}
@@ -338,8 +319,7 @@ $_('grapeTweet').module('net', function(done){
 						
 //							check if download is complete
 							if(app.syncStatus.contacts.nextFollowingCursor == '0' && app.syncStatus.contacts.nextFollowerCursor == '0'){
-								app.setState({
-									name : 'syncStatus',
+								app.syncStatus.apply({
 									contacts : {
 										nextFollowingCursor : '-1',
 										nextFollowerCursor : '-1',
