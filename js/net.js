@@ -188,8 +188,10 @@ $_('grapeTweet').module('net', function(done){
 				var contactsList= app.syncStatus.contacts.contactsCache;
 				
 				var followerLoop= new AsyncLoop(function(next, exit){
+                    var request= null;
+
 					if(app.syncStatus.contacts.nextFollowerCursor != '0')
-						var request= app.twitterSocket.get('/1.1/followers/ids.json', { user_id : app.account.userId, cursor : app.syncStatus.contacts.nextFollowerCursor });
+				        request= app.twitterSocket.get('/1.1/followers/ids.json', { user_id : app.account.userId, cursor : app.syncStatus.contacts.nextFollowerCursor });
 					else{
 						return exit();
 					}
@@ -221,8 +223,10 @@ $_('grapeTweet').module('net', function(done){
 				});
 					
 				var followingLoop= new AsyncLoop(function(next, exit){
-					if(app.syncStatus.contacts.nextFollowingCursor != '0')
-						var request= app.twitterSocket.get('/1.1/friends/ids.json', { user_id : app.account.userId, cursor : app.syncStatus.contacts.nextFollowingCursor });
+					var request= null;
+
+                    if(app.syncStatus.contacts.nextFollowingCursor != '0')
+						request= app.twitterSocket.get('/1.1/friends/ids.json', { user_id : app.account.userId, cursor : app.syncStatus.contacts.nextFollowingCursor });
 					else{
 						return exit();
 					}
@@ -278,7 +282,7 @@ $_('grapeTweet').module('net', function(done){
 						var request= app.twitterSocket.get('/1.1/users/lookup.json', { user_id : list.join(','), include_entities : false });
 						
 						request.then(function(contacts){
-							var contacts= $$.JSON.parse(contacts);
+							contacts= $$.JSON.parse(contacts);
 							
 							contacts.forEach(function(item){
 								app.storage.storeContact(item);
@@ -407,6 +411,7 @@ $_('grapeTweet').module('net', function(done){
 			return new $$.Promise(function(done){
 				app.twitterSocket.get('/1.1/statuses/home_timeline.json', { trim_user : true,  count : 100, since_id : app.dataStatus.lastTweets.timeline }).then(function(tweets){
 					tweets= $$.JSON.parse(tweets);
+
 					done();
 				});
 			});

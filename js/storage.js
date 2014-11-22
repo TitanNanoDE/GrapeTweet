@@ -21,6 +21,7 @@ $_('grapeTweet').module('storage', function(ready){
 			db.createObjectStore('applicationStates', { keyPath : 'name' });
 			var tweets= db.createObjectStore('tweets', { keyPath : 'id_str' });
 			db.createObjectStore('conversations', { keyPath : 'id' });
+            db.createObjectStore('timelines', { keyPath : 'id' });
 			 
 			direct_messages.createIndex('recipient_id', 'recipient_id', { unique : false });
 			direct_messages.createIndex('sender_id', 'sender_id', { unique : false });
@@ -122,7 +123,7 @@ $_('grapeTweet').module('storage', function(ready){
 						if(include || message.id_str != id)
 							list.push(message);
 						
-						if(nextMessage != null && list.length <= 20)
+						if(nextMessage !== null && list.length <= 20)
 							next();
 						else
 							exit();
@@ -145,7 +146,7 @@ $_('grapeTweet').module('storage', function(ready){
 				request.onsuccess= function(e){
 					nextMessage= e.target.result.next;
 					
-					if(nextMessage != null){
+					if(nextMessage !== null){
 						(new AsyncLoop(function(next, exit){
 							var request= db.transaction(['direct_messages']).objectStore('direct_messages').get(nextMessage);
 							
@@ -154,7 +155,7 @@ $_('grapeTweet').module('storage', function(ready){
 								nextMessage= message.next;
 								list.push(message);
 								
-								if(nextMessage != null)
+								if(nextMessage !== null)
 									next();
 								else
 									exit();
@@ -256,6 +257,52 @@ $_('grapeTweet').module('storage', function(ready){
 					error(e);
 				};
 			});
-		}
+		},
+        
+//      tweets and timelines
+        storeTimeline : function(timeline){
+            return new $$.Promise(function(done, error){
+                var request= db.transaction(['timelines'], 'readwrite').objectStore('timelines').put(timeline);
+                
+                request.onsuccess= function(e){
+                    done(e.target.result);
+                };
+                
+                request.onerror= function(e){
+                    error(e);
+                };
+            });
+        },
+        
+        storeTweet : function(tweet, timeline){
+            return new $$.Promise(function(done, error){
+                tweet.id+= '@'+timeline;
+                var request= db.transaction(['tweets'], 'readwrite').objectStore('tweets').put(tweet);
+                
+                request.onsuccess= function(e){
+                    done(e.target.result);
+                };
+                
+                request.onerror= function(e){
+                    error(e);
+                };
+            });
+        },
+        
+        getTweet : function(id, timeline){
+            return new $$.Promise(function(done, error){
+                var request= db.transaction(['tweets']).objectStore('tweets').get(id+'@'+timeline);
+                
+                request.onsuccess= function(e){
+                    var tweet= e.target.result;
+                    tweet.id= tweet.id.split('@')[0];
+                    done(tweet);
+                };
+                
+                request.onerror= function(e){
+                    error(e);
+                };
+            });
+        }
 	};
 });

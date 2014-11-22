@@ -7,12 +7,13 @@ $_('grapeTweet').module('ui', function(done){
 		var template_my= $('dom').select('#chat-my-message-layout').content;
 		var list= $('dom').select('.message-list');
 		var firstElement= $('dom').select('.page.chat .message-list li');
+        var element= null;
 		
 		if(item.sender_id == app.account.userId){
-			var element= template_my.cloneNode(true);
+			element= template_my.cloneNode(true);
 			element.querySelector('.message').dataset.id= item.id_str;
 		}else{
-			var element= template_default.cloneNode(true);
+            element= template_default.cloneNode(true);
 			element.querySelector('.user-image').style.setProperty('background-image', 'url('+ contact.profile_image_url +')');
 			element.querySelector('.message').dataset.id= item.id_str;
 		}
@@ -241,7 +242,7 @@ $_('grapeTweet').module('ui', function(done){
 		},
 		
 		renderAdditionalChunk : function(app){			
-			return new Promise(function(done){
+			return new $$.Promise(function(done){
 				var lastElement= $('dom').select('.page.chat .message-list li');
 				var body= $('dom').select('.page.chat .body');		
 				var scrollHeight= body.scrollHeight;
@@ -271,9 +272,11 @@ $_('grapeTweet').module('ui', function(done){
 					if(item.type == 'photo'){
 						text= text.replace(item.url, '');
 						var img= $('dom').create('img');
+                        var chatBody= $('dom').select('.page.chat .body');
+                        var scrollHeightBefore= chatBody.scrollHeight;
+                        
 						img.onload= function(){
-							var chatBody= $('dom').select('.page.chat .body');
-							chatBody.scrollTop= chatBody.scrollHeight;
+							chatBody.scrollTop= (chatBody.scrollTop / scrollHeightBefore / 100) * (chatBody.scrollHeight / 100);
 						};
 						target.appendChild(img);
 						app.net.cacheImage(item.media_url, app).then(function(url){

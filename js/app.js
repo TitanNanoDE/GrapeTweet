@@ -38,7 +38,6 @@ $_('grapeTweet').main(function(){
 		lastTweets : {
 			timeline : 0
 		},
-		loadingChunk : false
 	};
 	
 	this.syncStatus= {
@@ -54,6 +53,8 @@ $_('grapeTweet').main(function(){
 			contactsCache : []
 		}	
 	};
+
+    this.loadingChunk= false;
 	
 	this.cache= {
 		images : {}
@@ -63,7 +64,7 @@ $_('grapeTweet').main(function(){
 	
 	var objectReplace= function(target, update){
 		$$.Object.keys(update).forEach(function(item){
-			if(typeof update[item] == 'object' && !$$.Array.isArray(update[item]) && update[item] != null)
+			if(typeof update[item] == 'object' && !$$.Array.isArray(update[item]) && update[item] !== null)
 				objectReplace(target[item], update[item]);
 			else
 				target[item]= update[item];
@@ -183,7 +184,7 @@ $_('grapeTweet').main(function(){
 	
 	this.createConversation= function(id, lastmessage, unread){
 		return {
-			id : id,
+			id : String(id),
 			lastMessage : lastmessage,
 			lastReadMessage : null,
 			unread : unread
@@ -191,7 +192,7 @@ $_('grapeTweet').main(function(){
 	};
 	
 	this.integrateIntoMessagesChain= function(message, conversation){
-		return new Promise(function(done){
+		return new $$.Promise(function(done){
 			if(conversation && conversation.lastMessage != message.id_str){
 				message.last= conversation.lastMessage;
 				message.next= null;
@@ -221,6 +222,30 @@ $_('grapeTweet').main(function(){
 			}
 		});
 	};
+
+    this.integrateIntoTimeline= function(tweet, timeline){
+        return new $$.Promise(function(done){
+           if(timeline.last != tweet.id_str){
+               tweet.last= timeline.last;
+               tweet.next= null;
+
+               timeline.last= tweet.id_str;
+               $$.Promise.all([app.storage.storeTweet(tweet, timeline.id), app.storage.storeTimeline(timeline), app.storage.getTweet(tweet.last, timeline.id)]).then(function(values){
+                   var lastTweet= values[2];
+                   lastTweet.next= tweet.id_str;
+                   app.storage.storeTweet(lastTweet, timeline.id).then(done);
+               });
+           }
+        });
+    };
+
+    this.createTimeline= function(name, id){
+        app.storage.storeTimeline({
+            name : name,
+            id : id,
+            las : null
+        });
+    };
 	
 //	mouse events for lists
 	$('dom').select('.conv-list').addEventListener('click', app.openChat, false);
@@ -285,7 +310,7 @@ $_('grapeTweet').main(function(){
 	
 //	chat scrollTop
 	$('dom').select('.page.chat .body').addEventListener('scroll', function(e){
-		if(e.target.scrollTop === 0 && !app.dataStatus.loadingChunk){
+		if(e.target.scrollTop === 0 && !app.loadingChunk){
 			app.setState({
 				name : 'dataStatus',
 				loadingChunk : true
@@ -406,7 +431,12 @@ $_('grapeTweet').main(function(){
 						app.setState(item);
 				});
 				
-				app.net.syncContacts(app).then(done);
+                if(app.syncStatus.contacts.lastSync === '')
+                    app.net.syncContacts(app).then(done);
+                else{
+                    app.net.syncContacts(app).then();
+                    done();
+                }
 			});
 		}));
 		
