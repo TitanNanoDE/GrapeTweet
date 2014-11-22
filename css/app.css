@@ -529,7 +529,7 @@ ul{
 .chat .send{
     height: 45px;
     width: 45px;
-    right: 0px;
+    right: 0;
     background-size: 40px auto;
     background-image: url("/img/speech-buuble.png");
     background-position: center center;
