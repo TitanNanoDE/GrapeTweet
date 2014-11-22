@@ -1,0 +1,10 @@
+{
+    "unused" : true,
+    "newcap" : true,
+    "undef" : true,
+    "globals" : {
+        "$$" : false,
+        "$" : false,
+        "$_" : false
+    }
+}
