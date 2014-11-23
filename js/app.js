@@ -18,8 +18,13 @@ $_('grapeTweet').main(function(){
     
     var appStateHandler= {
         get : function(target, property){
-            if(property == 'set'){
-                return objectReplace.bind(target);
+
+            var features= {
+                apply : objectReplace
+            };
+
+            if(property in features){
+                return features[property].bind(this);
             }else{
                 return target[property];
             }
@@ -79,7 +84,7 @@ $_('grapeTweet').main(function(){
 	var objectReplace= function(update){
 		$$.Object.keys(update).forEach(function(item){
 			if(typeof update[item] == 'object' && !$$.Array.isArray(update[item]) && update[item] !== null)
-				objectReplace.apply(this, [update[item]]);
+				objectReplace.apply(this[item], [update[item]]);
 			else
 				this[item]= update[item];
 		});
@@ -89,62 +94,66 @@ $_('grapeTweet').main(function(){
 		app.openChat(e.target.tag);
 		app.show();
 	};
+
+    var requestEndpoint= function(callback){
+        $$.navigator.push.registrations().onsuccess= function(){
+            this.result.forEach(function(item){
+                $$.navigator.push.unregister(item.pushEndpoint);
+            });
+        };
+
+        $$.console.log('requesting push-endpoint...');
+        var endpointRequest= $$.navigator.push.register();
 	
-	var requestNewEndpoint= function(){
+        endpointRequest.onsuccess= function(){
+            callback(endpointRequest.result);
+        };
+
+        endpointRequest.onerror= function(e){
+            $$.console.error('D: we couldn\'t get a new endpoint!! ' + $$.JSON.stringify(e) + ' Retry in 10 seconds!');
+            $$.setTimeout(function(){ requestEndpoint(callback); }, 10000);
+        };
+    };
+
+    var registerPushClient= function(){
+        $$.console.log('registering at the push-server...');
+        requestEndpoint(function(endpoint){
+            app.pushServerSocket.request('/register', $$.JSON.stringify({ endpoint : endpoint })).then(function(data){
+                data= $$.JSON.parse(data);
+                app.pushServerSocket.request('/verify', $$.JSON.stringify({
+                    id : data.clientId,
+                    x1 : app.twitterSocket.exposeToken()[0],
+                    x2 : app.twitterSocket.exposeToken()[1]
+                })).then(function(){
+                    app.pushServer.apply({ id : data.clientId, ready : true, endpoint : endpoint, lastRefresh : Date.now() });
+                    $$.console.log('push-server successfully registered!');
+                });
+            });
+        });
+    };
+	
+	var updatePushServer= function(force){
 		if(!app.pushServer.ready){
-			var requestPush= $$.navigator.push.register();
+            registerPushClient();
+        }else if( (Date.now() - app.pushServer.lastRefresh) > 7200000 && force){
+            requestEndpoint(function(endpoint){
+                app.pushServerSocket.request('/updateEndpoint', $$.JSON.stringify({ id : app.pushServer.id, endpoint : endpoint })).then(function(data){
+                    data= $$.JSON.parse(data);
+
+                    if(data.status != 'failed'){
+                        app.pushServer.apply({ endpoint : endpoint, lastRefresh : Date.now() });
+                        $$.console.log('push-endpoint successfully updated!');
+                    }else{
+                        $$.console.error('push-endpoint update failed!');
+                    }
+                });
+            });
+        }else{
+            $$.console.log('push server already registered!');
+        }
+    };
 	
-			requestPush.onsuccess= function(){
-				app.pushServerSocket.request('/register', $$.JSON.stringify({ endpoint : requestPush.result })).then(function(data){
-					data= $$.JSON.parse(data);
-					app.pushServerSocket.request('/verify', $$.JSON.stringify({
-						id : data.clientId,
-						x1 : app.twitterSocket.exposeToken()[0],
-						x2 : app.twitterSocket.exposeToken()[1]
-					})).then(function(){
-						app.pushServer.apply({ id : data.clientId, ready : true, endpoint : requestPush.result, lastRefresh : Date.now() });
-						$$.console.log('push-server successfully registered!');
-					});
-				});
-				$$.console.log('push-server registeration requested...');
-			};
-			
-			requestPush.onerror= function(e){
-				$$.console.error('D: we couldn\'t get a new endpoint!! ' + $$.JSON.stringify(e));
-			};
-		}else{
-			$$.navigator.push.registrations().onsuccess= function(){
-				this.result.forEach(function(item){
-					$$.navigator.push.unregister(item.pushEndpoint);
-				});
-				
-				var request= $$.navigator.push.register();
-				
-				request.onsuccess= function(){
-					app.pushServerSocket.request('/updateEndpoint', $$.JSON.stringify({ id : app.pushServer.id, endpoint : request.result })).then(function(data){
-						data= $$.JSON.parse(data);
-						
-						if(data.status != 'failed'){
-							app.pushServer.apply({ endpoint : request.result, lastRefresh : Date.now() });
-							$$.console.log('push-endpoint successfully updated!');
-						}else{
-							$$.console.error('push-endpoint update failed');
-						}
-					});
-				};
-				
-				request.onerror= function(e){
-					$$.console.error('D: we couldn\'t get a new endpoint!! ' + $$.JSON.stringify(e) + ' Retry in 10 seconds!');
-					$$.setTimeout(requestNewEndpoint, 10000);
-				};
-				
-				$$.console.log('push-enpoint update requested...');
-			};
-			
-		}
-	};
-	
-	app.endpoint= requestNewEndpoint;
+	app.endpoint= updatePushServer;
 	
 	app.openChat= function(e){
 		var id = ((e.target) ? e.target.dataset.userId : e);
@@ -452,16 +461,10 @@ $_('grapeTweet').main(function(){
 			}));
 			
 			$$.navigator.mozSetMessageHandler('push-register', function(){
-				requestNewEndpoint();
+				updatePushServer(true);
 			});
 			
-			if(!app.pushServer.ready){
-				requestNewEndpoint();
-			}else if( (Date.now() - app.pushServer.lastRefresh) > 7200000){
-				requestNewEndpoint();
-			}else{
-				$$.console.log('push server already registered!');	 
-			}
+            updatePushServer();
     	
 			$$.Promise.all(app.jobs).then(function(){
 //				the app is ready, so we are ready to handle pushs 
