@@ -1,4 +1,4 @@
-$_('grapeTweet').module('misc', function(done){
+$_('grapeTweet').module('Misc', [], function(app, done){
 	
 	done({
 		

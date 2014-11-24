@@ -1,15 +1,17 @@
-$_('grapeTweet').module('ui', function(done){
+$_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 	
 	var client= $('dom').select('.client.twitter');
+    
+    var { Storage, Misc, Net } = App.modules;
 	
-	var renderMessage= function(item, contact, app, insertBefore){	
+	var renderMessage= function(item, contact, insertBefore){	
 		var template_default= $('dom').select('#chat-message-layout').content;
 		var template_my= $('dom').select('#chat-my-message-layout').content;
 		var list= $('dom').select('.message-list');
 		var firstElement= $('dom').select('.page.chat .message-list li');
         var element= null;
 		
-		if(item.sender_id == app.account.userId){
+		if(item.sender_id == App.account.userId){
 			element= template_my.cloneNode(true);
 			element.querySelector('.message').dataset.id= item.id_str;
 		}else{
@@ -19,7 +21,7 @@ $_('grapeTweet').module('ui', function(done){
 		}
 							
 //		format text
-		renderEntities(item.text, item.entities, element.querySelector('.text'), app);
+		renderEntities(item.text, item.entities, element.querySelector('.text'));
 							
 //		timestamp
 		var date= new Date(item.created_at);
@@ -31,7 +33,7 @@ $_('grapeTweet').module('ui', function(done){
 			list.insertBefore(element, firstElement);
 	};
     
-    var renderEntities= function(text, entities, target, app){
+    var renderEntities= function(text, entities, target){
 //      add medias
         if(entities.media){
             entities.media.forEach(function(item){
@@ -45,7 +47,7 @@ $_('grapeTweet').module('ui', function(done){
                         chatBody.scrollTop= (chatBody.scrollTop / scrollHeightBefore / 100) * (chatBody.scrollHeight / 100);
                     };
                     target.appendChild(img);
-                    app.net.cacheImage(item.media_url, app).then(function(url){
+                    Net.cacheImage(item.media_url).then(function(url){
                         img.src= url;
                     });
                 }
@@ -105,14 +107,14 @@ $_('grapeTweet').module('ui', function(done){
 			$('dom').select('.sheet.'+ sheet +' .page.'+ to).classList.remove('left');
 		},
 		
-		renderContacts : function(app){
+		renderContacts : function(){
 			return new $$.Promise(function(done){
 				var template= $('dom').select('#contact-layout').content;
 				var list= $('dom').select('.contact-list');
 				
 				list.innerHTML= '';
 			
-				app.storage.getContacts().then(function(contacts){
+				Storage.getContacts().then(function(contacts){
 					$$.Object.keys(contacts).forEach(function(item){
 						item= contacts[item];
 						var element= template.cloneNode(true);
@@ -129,16 +131,16 @@ $_('grapeTweet').module('ui', function(done){
 			});
 		},
 		
-		renderChats : function(app){
+		renderChats : function(){
 			return new Promise(function(done){
-				app.storage.getConversationsList().then(function(conversations){
+				Storage.getConversationsList().then(function(conversations){
 					var promises= [];
 				
 					$$.Object.keys(conversations).forEach(function(key){
-						promises.push(app.storage.getMessage(conversations[key].lastMessage));
+						promises.push(Storage.getMessage(conversations[key].lastMessage));
 					});
 					
-					promises.push(app.storage.getContacts());
+					promises.push(Storage.getContacts());
 				
 					$$.Promise.all(promises).then(function(messages){
 						var template= $('dom').select('#conv-layout').content;
@@ -158,7 +160,7 @@ $_('grapeTweet').module('ui', function(done){
 							
 							if(conv.unread > 0)
 								element.querySelector('.conv').classList.add('unread');
-							else if(latest.sender_id == app.account.userId)
+							else if(latest.sender_id == App.account.userId)
 								element.querySelector('.conv').classList.add('my');
 							
 							element.querySelector('.user-image').style.setProperty('background-image', 'url('+ user.profile_image_url +')');
@@ -181,9 +183,9 @@ $_('grapeTweet').module('ui', function(done){
 			});
 		},
 		
-		renderChat : function(app, userId){			
+		renderChat : function(userId){			
 			return new $$.Promise(function(done){
-				$$.Promise.all([app.storage.getConversation(userId), app.storage.getContact(userId)]).then(function(values){
+				$$.Promise.all([Storage.getConversation(userId), Storage.getContact(userId)]).then(function(values){
 					var conversation= values[0];
 					var contact= values[1];
 					var list= $('dom').select('.message-list');
@@ -208,42 +210,42 @@ $_('grapeTweet').module('ui', function(done){
 							
 						userImage.style.setProperty('background-image', 'url('+ contact.profile_image_url +')');
 						userImage.href= '#!/profile/'+ contact.id;
-						app.dataStatus.lastChat= contact.id_str;
+						App.dataStatus.lastChat= contact.id_str;
 						list.dataset.userId= contact.id;
 					}
 					
 					if(conversation){
 						if(differentConv){
-							app.storage.getMessagesChunkBefore(conversation.lastMessage, true).then(function(messages){
-								messages.sort(app.misc.sortByDate);
+				                Storage.getMessagesChunkBefore(conversation.lastMessage, true).then(function(messages){
+								messages.sort(Misc.sortByDate);
 								messages.forEach(function(item){
-									renderMessage(item, contact, app);
+									renderMessage(item, contact);
 								});
 														
-								app.account.unreadMessages= app.account.unreadMessages-conversation.unread;
+								App.account.unreadMessages= App.account.unreadMessages-conversation.unread;
 								
 								conversation.lastReadMessage= messages.last().id_str;
 								conversation.unread= 0;
-								app.storage.storeConversation(conversation);
+								App.storage.storeConversation(conversation);
 					
-								app.ui.renderFooterStatus(app.account);
+								interface.renderFooterStatus(App.account);
 								body.scrollTop= body.scrollHeight;
 								done();
 							});
 						}else{
-							app.storage.getNewMessagesSince(conversation.lastReadMessage).then(function(messages){
+							Storage.getNewMessagesSince(conversation.lastReadMessage).then(function(messages){
 								if(messages.length > 0){
-									messages.sort(app.misc.sortByDate);
+									messages.sort(Misc.sortByDate);
 									messages.forEach(function(item){
-										renderMessage(item, contact, app);
+										renderMessage(item, contact);
 									});
 							
-									app.account.unreadMessages= app.account.unreadMessages-conversation.unread;
+									App.account.unreadMessages-= conversation.unread;
 									conversation.lastReadMessage= messages.last().id_str;
 									conversation.unread= 0;
-									app.storage.storeConversation(conversation);
+									Storage.storeConversation(conversation);
 					
-									app.ui.renderFooterStatus(app.account);
+									interface.renderFooterStatus(App.account);
 									body.scrollTop= body.scrollHeight;
 								}
 								done();
@@ -254,19 +256,19 @@ $_('grapeTweet').module('ui', function(done){
 			});
 		},
 		
-		renderAdditionalChunk : function(app){			
+		renderAdditionalChunk : function(){			
 			return new $$.Promise(function(done){
 				var lastElement= $('dom').select('.page.chat .message-list li');
 				var body= $('dom').select('.page.chat .body');		
 				var scrollHeight= body.scrollHeight;
 				
 				if(lastElement){
-					$$.Promise.all([app.storage.getMessagesChunkBefore(lastElement.dataset.id, false), app.storage.getContact(app.dataStatus.lastChat)]).then(function(values){
-						var messages= values[0].sort(app.misc.sortByDate);
+					$$.Promise.all([Storage.getMessagesChunkBefore(lastElement.dataset.id, false), Storage.getContact(App.dataStatus.lastChat)]).then(function(values){
+						var messages= values[0].sort(Misc.sortByDate);
 						var contact= values[1];
 						
 						messages.reverse().forEach(function(item){
-							renderMessage(item, contact, app, true);
+							renderMessage(item, contact, true);
 						});
 						
 						body.scrollTop= body.scrollHeight - scrollHeight - 20;

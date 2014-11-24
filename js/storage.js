@@ -1,4 +1,4 @@
-$_('grapeTweet').module('storage', function(ready){
+$_('grapeTweet').module('Storage', [], function(App, ready){
 	var db= null;
 	var dbRequest= $$.indexedDB.open('grapeTweetDB', 1);
 	var AsyncLoop= $('classes').AsyncLoop;
