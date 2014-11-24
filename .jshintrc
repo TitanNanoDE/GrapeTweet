@@ -2,6 +2,7 @@
     "unused" : true,
     "newcap" : true,
     "undef" : true,
+    "esnext" : true,
     "globals" : {
         "$$" : false,
         "$" : false,
