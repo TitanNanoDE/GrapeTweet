@@ -2,6 +2,14 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
 	var db= null;
 	var dbRequest= $$.indexedDB.open('grapeTweetDB', 1);
 	var AsyncLoop= $('classes').AsyncLoop;
+    
+    var caches= {
+        conversations : {},
+        contacts : {}
+    };
+    
+    var conversationsCached= false;
+    var contactsCached= false;
 	
 	dbRequest.onerror= function(){
 		$$.console.error('unable to access the DB!');
@@ -60,20 +68,26 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
 //		Direct Messages
 		getConversation : function(userId){
 			return new Promise(function(success){
-				var request= db.transaction(['conversations']).objectStore('conversations').get(String(userId));
+                if(!(userId in caches.conversations)){
+                    var request= db.transaction(['conversations']).objectStore('conversations').get(String(userId));
 				
-				request.onsuccess= function(e){
-					success(e.target.result);
-				};
+				    request.onsuccess= function(e){
+                        caches.conversations[userId]= e.target.result;
+                        success(e.target.result);
+				    };
 				
-				request.onerror= function(){
-					success(null);
-				};
+                    request.onerror= function(){
+                        success(null);
+				    };
+                }else{
+                    success(caches.conversations[userId]);
+                }
 			});	
 		},
 		
 		storeConversation : function(conv){
 			return new Promise(function(success, error){
+                caches.conversations[conv.id]= conv;
 				var request= db.transaction(['conversations'], 'readwrite').objectStore('conversations').put(conv);
 				
 				request.onsuccess= function(e){
@@ -191,26 +205,34 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
 		
 		getConversationsList : function(){
 			return new Promise(function(done, error){
-				var request= db.transaction(['conversations']).objectStore('conversations').openCursor();
-				var conversations= {};
+                if(!conversationsCached){
+                    var request= db.transaction(['conversations']).objectStore('conversations').openCursor();
 				
-				request.onsuccess= function(e){
-					var cursor= e.target.result;
+				    request.onsuccess= function(e){
+                        var cursor= e.target.result;
 					
-					if(cursor){
-						conversations[cursor.key]= cursor.value;
-						cursor.continue();
-					}else
-						done(conversations);
-				};
+					   if(cursor){
+                           if(!(cursor.key in caches.conversations))
+                               caches.conversations[cursor.key]= cursor.value;
+                           cursor.continue();
+					   }else{
+                           conversationsCached= true;
+                           done(caches.conversations);
+                       }
+				    };
 				
-				request.onerror= error;
-			});
+                    request.onerror= error;
+                }else{
+                    done(caches.conversations);
+                }
+            });
 		},
 		
 //		contacts
 		storeContact : function(contact){
 			return new Promise(function(done, error){
+                contact.id= String(contact.id);
+                caches.contacts[contact.id]= contact;
 				var request= db.transaction(['contacts'], 'readwrite').objectStore('contacts').put(contact);
 				
 				request.onsuccess= function(e){
@@ -225,37 +247,49 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
 		
 		getContact : function(userId){
 			return new Promise(function(success){
-				userId= $$.parseInt(userId);
-				var request= db.transaction(['contacts']).objectStore('contacts').get(userId);
+                userId= String(userId);
+                
+                if(!(userId in caches.contacts)){
+				    var request= db.transaction(['contacts']).objectStore('contacts').get(userId);
 				
-				request.onsuccess= function(e){
-					success(e.target.result);
-				};
+				    request.onsuccess= function(e){
+                        caches[userId]= e.target.result;
+                        success(e.target.result);
+				    };
 				
-				request.onerror= function(){
-					success(null);	
-				};
+				    request.onerror= function(){
+                        success(null);	
+				    };
+                }else{
+                    success(caches.contacts[userId]);
+                }
 			});
 		},
 		
 		getContacts : function(){
 			return new Promise(function(done, error){
-				var list= {};
-				var request= db.transaction(['contacts']).objectStore('contacts').openCursor();
+				if(!contactsCached){
+                    var request= db.transaction(['contacts']).objectStore('contacts').openCursor();
 				
-				request.onsuccess= function(e){
-					var cursor= e.target.result;
-					
-					if(cursor){
-						list[cursor.value.id]= cursor.value;
-						cursor.continue();
-					}else
-						done(list);
-				};
+				    request.onsuccess= function(e){
+                        var cursor= e.target.result;
+				    	
+                        if(cursor){
+                            if(!(cursor.key in caches.contacts))
+                                caches.contacts[cursor.key]= cursor.value;
+                            cursor.continue();
+                        }else{
+                            contactsCached= true;
+                            done(caches.contacts);
+                        }
+                    };
 				
-				request.onerror= function(e){
-					error(e);
-				};
+                    request.onerror= function(e){
+                        error(e);
+				    };
+                }else{
+                    done(caches.contacts);
+                }
 			});
 		},
         
