@@ -13,8 +13,6 @@ $_('grapeTweet').main(function(){
   
   	this.twitterSocket= new OAuthClient('twitter', 'https://api.twitter.com', 'gC7HaQ7T4u8HYGgRIhiLz0xGs', 'vNOVVig70BQl0pXjzpaU7Mf88Jd6O2gzTQ6FavnGUTalGtnMM1', { mozSystem : true });
 	this.pushServerSocket= new Socket(Socket.HTTP, 'http://grapetweet-titannano.rhcloud.com',  { mozSystem : true });
-	this.messageInSound= new $$.Audio('/sounds/recived.mp3');
-	this.messageOutSound= new $$.Audio('/sounds/sent.mp3');
 	
 	$$.App= this;
     
@@ -183,10 +181,10 @@ $_('grapeTweet').main(function(){
 		
 						notification.addEventListener('click', notificationClick, false);
 					}else{
-						app.messageInSound.play();
+						Audio.play('recieved');
 					}	
 				}else if(!$$.document.hidden){
-					app.messageOutSound.play();
+					Audio.play('sent');
 				}
 			});
 		});
