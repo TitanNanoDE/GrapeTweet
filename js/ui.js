@@ -190,7 +190,6 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 					var contact= values[1];
 					var list= $('dom').select('.message-list');
 					var userImage= $('dom').select('.page.chat .header-user-image');
-
 					var body= $('dom').select('.page.chat .body');		
 					
 //					close notification for this conversation
@@ -215,41 +214,28 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 					}
 					
 					if(conversation){
-						if(differentConv){
-				                Storage.getMessagesChunkBefore(conversation.lastMessage, true).then(function(messages){
-								messages.sort(Misc.sortByDate);
-								messages.forEach(function(item){
-									renderMessage(item, contact);
-								});
-														
-								App.account.unreadMessages= App.account.unreadMessages-conversation.unread;
-								
-								conversation.lastReadMessage= messages.last().id_str;
-								conversation.unread= 0;
-								App.storage.storeConversation(conversation);
-					
-								interface.renderFooterStatus(App.account);
-								body.scrollTop= body.scrollHeight;
-								done();
-							});
-						}else{
-							Storage.getNewMessagesSince(conversation.lastReadMessage).then(function(messages){
-								if(messages.length > 0){
-									messages.sort(Misc.sortByDate);
-									messages.forEach(function(item){
-										renderMessage(item, contact);
-									});
+                        var handle= function(messages){
+				            if(messages.length > 0){
+                                messages.sort(Misc.sortByDate);
+                                messages.forEach(function(item){
+                                    renderMessage(item, contact);
+                                });
 							
-									App.account.unreadMessages-= conversation.unread;
-									conversation.lastReadMessage= messages.last().id_str;
-									conversation.unread= 0;
-									Storage.storeConversation(conversation);
+                                App.account.unreadMessages-= conversation.unread;
+                                conversation.lastReadMessage= messages.last().id_str;
+                                conversation.unread= 0;
+                                Storage.storeConversation(conversation);
 					
-									interface.renderFooterStatus(App.account);
-									body.scrollTop= body.scrollHeight;
-								}
-								done();
-							});
+                                interface.renderFooterStatus(App.account);
+                                body.scrollTop= body.scrollHeight;
+                            }
+                            done();
+                        };
+                        
+						if(differentConv){
+				            Storage.getMessagesChunkBefore(conversation.lastMessage, true).then(handle);
+						}else{
+							Storage.getNewMessagesSince(conversation.lastReadMessage).then(handle);
 						}
 					}else done();
 				});
