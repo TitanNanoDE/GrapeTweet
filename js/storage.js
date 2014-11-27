@@ -8,6 +8,22 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
         contacts : {}
     };
     
+    var listeners= {
+        messages : {
+            
+        },
+        
+        add : function(id, type, callback){
+            var l= this[type][id]= this[type][id] || [];
+            l.push(callback);
+        },
+        collect : function(id, type){
+            var l= this[type][id];
+            this[type][id]= [];
+            return l;
+        }
+    };
+    
     var conversationsCached= false;
     var contactsCached= false;
 	
@@ -104,13 +120,17 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
 			
 				request.onsuccess= function(e){
 					success(e.target.result);
+                    listeners.collect('messages', message.id_str).forEach(function(item){
+                        if(item)
+                            item(message);
+                    });
 				};
 				
 				request.onerror= error;
 			});
 		},
 		
-		getMessage : function(id){
+		getMessage : function(id, required){
 			return new Promise(function(success, error){
 				var request= db.transaction(['direct_messages']).objectStore('direct_messages').get(id);
 				
@@ -118,7 +138,14 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
 					success(e.target.result);
 				};
 				
-				request.onerror= error;
+				request.onerror= function(e){
+                    $$.console.log(e);
+                    if(required){
+                        listeners.add(id, 'messages', success);
+                    }else{
+                        error(e);
+                    }
+                };
 			});
 		},
 		
