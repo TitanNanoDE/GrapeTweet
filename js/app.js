@@ -348,33 +348,6 @@ $_('grapeTweet').main(function(){
     	
 			$$.Promise.all(App.jobs).then(function(){
 //				the app is ready, so we are ready to handle pushs 
-				$$.navigator.mozSetMessageHandler('push', function(e){
-					$$.console.log('new push version: '+ e.version);
-					$$.Promise.all([App.pushServerSocket.request('/pull', $$.JSON.stringify({ id : App.pushServer.id })), Storage.getConversationsList()]).then(function(values){
-						var record= $$.JSON.parse(values[0]);
-						var conversations= values[1];
-						
-						record.forEach(function(item){
-							if(item.type == 'direct_message'){
-								var convId= (item.sender_id == App.account.userId) ? item.recipient_id : item.sender_id;
-
-								App.integrateIntoMessagesChain(item, conversations[convId]).then(function(){
-									App.notify(convId);
-									
-									var chatPage= $('dom').select('.message-list');
-									if(!$$.document.hidden && $$.location.hash.indexOf('/chat') > -1)
-										UI.renderChat(chatPage.dataset.userId);
-								});
-							}else if(item.type == 'server_crash'){
-								App.pushServerSocket.request('/reverify', $$.JSON.stringify({
-									id : App.pushServer.id,
-									x1 : App.twitterSocket.exposeToken()[0],
-									x2 : App.twitterSocket.exposeToken()[1]
-								})).then();
-							}
-						});
-					});
-				});
 
                 Bindings.ui.apply($$);
                 Bindings.navigaton.apply($('hash'));
