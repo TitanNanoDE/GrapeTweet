@@ -8,7 +8,7 @@ Librarys
 GrapeTweet uses the Google hmac-sha1 from the CryptoJS Library at http://code.google.com/p/crypto-js
 
 ###Application Frame 0.1
-GrarpeTweet uses the Application Frame http://github.com/titannano/applicationframe by Jovan Gerodetti
+GrarpeTweet uses the [Application Frame](http://github.com/titannanode/applicationframe) by Jovan Gerodetti
 
 Icon Sources
 ------------
