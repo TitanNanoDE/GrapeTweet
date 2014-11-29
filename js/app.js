@@ -19,7 +19,7 @@ $_('grapeTweet').main(function(){
             };
 
             if(property in features){
-                return features[property].bind(this);
+                return features[property].bind(target);
             }else{
                 return target[property];
             }
@@ -77,11 +77,12 @@ $_('grapeTweet').main(function(){
 	this.jobs= [];
 	
 	var objectReplace= function(update){
+        var self= this;
 		$$.Object.keys(update).forEach(function(item){
 			if(typeof update[item] == 'object' && !$$.Array.isArray(update[item]) && update[item] !== null)
-				objectReplace.apply(this[item], [update[item]]);
+				objectReplace.apply(self[item], [update[item]]);
 			else
-				this[item]= update[item];
+				self[item]= update[item];
 		});
 	};
 
@@ -264,28 +265,21 @@ $_('grapeTweet').main(function(){
 	(new $$.Promise(function(done){
 		if(!App.twitterSocket.isLoggedIn()){
     	
-			App.twitterSocket.requestToken('/oauth/request_token', 'oob').then(function(){
+			App.twitterSocket.requestToken('/oauth/request_token', 'http://grape-tweet.com/callback').then(function(){
 				$('dom').select('.splash .signIn').classList.remove('hidden');
 			});
     
 			$('dom').select('.splash .signIn').addEventListener('click', function(){
 				App.twitterSocket.authenticate('/oauth/authenticate');
-				var verify= $('dom').select('.splash .verify');
-				var code= $('dom').select('.splash .code');
-        
-				$('dom').select('.splash .signIn').classList.add('hidden');
-				code.classList.remove('hidden');
-				verify.classList.remove('hidden');
-        
-				verify.addEventListener('click', function(){
-					App.twitterSocket.verify('/oauth/access_token', code.value).then(function(userId){
+				$$.onOAuthCallback= function(data){
+                    delete $$.onOAuthCallback;
+                    $$.console.log(data);
+					App.twitterSocket.verify('/oauth/access_token', data[1][1]).then(function(userId){
 						App.account.userId= userId;
 						done();
 					});
-					code.classList.add('hidden');
-					verify.classList.add('hidden');
 					$('dom').select('.splash .loading').classList.remove('hidden');
-				}, false);
+				};
 			}, false);
     
   		}else{
@@ -332,6 +326,7 @@ $_('grapeTweet').main(function(){
 		
 			App.jobs.push(UI.renderChats());
 			App.jobs.push(new $$.Promise(function(done){
+                Bindings.navigation.apply($('hash'));
 				$('hash').restore();
 			
 				if($$.location.hash.indexOf('/chat') > -1)
@@ -350,7 +345,6 @@ $_('grapeTweet').main(function(){
 //				the app is ready, so we are ready to handle pushs 
 
                 Bindings.ui.apply($$);
-                Bindings.navigaton.apply($('hash'));
 				
 // 				everything is done we can open the UI.
 				$('dom').select('.splash .loading').classList.add('hidden');

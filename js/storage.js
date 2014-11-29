@@ -17,10 +17,10 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
             var l= this[type][id]= this[type][id] || [];
             l.push(callback);
         },
-        collect : function(id, type){
+        collect : function(type, id){
             var l= this[type][id];
             this[type][id]= [];
-            return l;
+            return l || [];
         }
     };
     
@@ -60,7 +60,7 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
 			return new Promise(function(success, error){
 				var request= db.transaction(['applicationStates']).objectStore('applicationStates').get(name);
 				request.onsuccess= function(e){
-					success(e.target.result);
+					success(e.target.result || {});
 				};
 				
 				request.onerror= error;

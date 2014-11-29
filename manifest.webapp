@@ -30,6 +30,10 @@
     { "push-register": "/index.html" },
     { "notification" : "/index.html" }
   ],
+  "redirects": [
+    {"from": "http://grape-tweet.com/callback",
+     "to": "/callback.html"}
+  ],
   "installs_allowed_from": [
     "*"
   ],

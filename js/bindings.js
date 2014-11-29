@@ -115,7 +115,7 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
         }, false);
     };
     
-    var navigaton= function(){
+    var navigation= function(){
         //	top level navigation 
         this.mount(['/', '/streams', '/messages', '/notifications', '/find', '/settings'], function(path){
             var sheet= path.split('/')[1];
@@ -161,6 +161,6 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
     
     done({
         ui : ui,
-        navigaton : navigaton
+        navigation : navigation
     });
 });

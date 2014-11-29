@@ -270,7 +270,7 @@ $_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
 							contacts= $$.JSON.parse(contacts);
 							
 							contacts.forEach(function(item){
-								App.storage.storeContact(item);
+				                Storage.storeContact(item);
 							});
 							next();
 						});
