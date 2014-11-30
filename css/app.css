@@ -68,7 +68,7 @@ ul{
 	margin-bottom: 40px;
 }
 
-.splash button, .splash input{
+.splash button{
 	width: 100%;
 	font-size: 26px;
 	padding: 5px;
@@ -80,12 +80,6 @@ ul{
 	margin: -2px 0 0 -2px;
 }
 
-.splash input{
-	box-shadow: none;
-	margin: 0 0 25px;
-	padding: 7px 10px;
-	font-size: 25px;
-}
 
 .splash button.hidden, .splash .loading.hidden{
 	display: none;

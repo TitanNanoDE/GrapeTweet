@@ -44,6 +44,11 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
         //	mouse events for lists
         $('dom').select('.conv-list').addEventListener('click', App.openChat, false);
         $('dom').select('.contact-list').addEventListener('click', App.openChat, false);
+        
+        $('dom').select('.conv-list').addEventListener('contextmenu', function(){
+            $$.navigator.vibrate([150]);
+            $$.location.hash= '#!/profile';
+        });
         $('dom').select('.tweet-list').addEventListener('click', function(){
 			if(this.classList.contains('collapsed'))
 				this.classList.remove('collapsed');
