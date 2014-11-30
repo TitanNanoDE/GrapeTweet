@@ -362,8 +362,8 @@ $_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
 				else{
 					App.twitterSocket.download(url, true).then(function(blob){
 						var blob_url= $$.URL.createObjectURL(blob);
-						App.cache.images[url]= blob_url;
-						done(blob_url);
+						App.cache.images[url]= [blob_url, blob];
+						done([blob_url, blob]);
 					});
 				}
 			});

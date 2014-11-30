@@ -41,21 +41,37 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
                     text= text.replace(item.url, '');
                     var img= $('dom').create('img');
                     var chatBody= $('dom').select('.page.chat .body');
-                    var scrollHeightBefore= chatBody.scrollHeight;
-                        
-                    img.onload= function(){
-                        chatBody.scrollTop= (chatBody.scrollTop / scrollHeightBefore / 100) * (chatBody.scrollHeight / 100);
-                    };
+                    
+                    img.height= item.sizes.large.h / item.sizes.large.w * ($$.innerWidth - 34 - ($$.innerWidth / 100 * 25));
                     target.appendChild(img);
-                    Net.cacheImage(item.media_url).then(function(url){
-                        img.src= url;
+                    chatBody.scrollTop= chatBody.scrollHeight;
+                    var url= item.media_url;
+                    Net.cacheImage(item.media_url).then(function(list){
+                        img.src= list[0];
+                        if($$.MozActivity){
+                            img.addEventListener('click', function(){
+                                new $$.MozActivity({
+                                    name : 'open',
+                                    data : {
+                                        type : 'image/'+url.substr(url.lastIndexOf('.')+1),
+                                        blob : list[1]
+                                    }
+                                });
+                            });
+                        }
                     });
                 }
+            });
+        }else if(entities.urls){
+            entities.urls.forEach(function(item){
+                text= text.replace(item.url, '<a href="'+ item.url +'" target="_blank">'+ item.display_url +'</a>');
             });
         }
 		
 //	    set text
-        target.innerHTML+= text;
+        var element= $('dom').create('span');
+        element.innerHTML= text;
+        target.appendChild(element);
     };
 	
 	var getTimeSince= function(timeSting){
