@@ -66,6 +66,23 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
 				request.onerror= error;
 			});
 		},
+        
+        getApplicationStates : function(){
+            return new Promise(function(success, error){
+                var list= [];
+                var request= db.transaction(['applicationStates']).objectStore('applicationStates').openCursor();
+                request.onsuccess= function(e){
+                    if(e.target.result){
+                        list.push(e.target.result.value);
+                        e.target.result.continue();
+                    }else{
+                        success(list);
+                    }
+                };
+                
+                request.onerror= error;
+            });
+        },
 		
 		saveApplicationState : function(state){
 			return new Promise(function(success){

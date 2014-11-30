@@ -15,7 +15,10 @@ $_('grapeTweet').main(function(){
         get : function(target, property){
 
             var features= {
-                apply : objectReplace
+                apply : function(){
+                    objectReplace.apply(this, arguments);
+                    Storage.saveApplicationState(this);
+                }
             };
 
             if(property in features){
@@ -128,7 +131,7 @@ $_('grapeTweet').main(function(){
         });
     };
 	
-	var updatePushServer= function(force){
+	this.updatePushServer= function(force){
 		if(!App.pushServer.ready){
             registerPushClient();
         }else if( (Date.now() - App.pushServer.lastRefresh) > 7200000 && force){
@@ -149,9 +152,7 @@ $_('grapeTweet').main(function(){
         }
     };
 	
-	App.endpoint= updatePushServer;
-	
-	App.openChat= function(e){
+	this.openChat= function(e){
 		var id = ((e.target) ? e.target.dataset.userId : e);
 		
 		UI.renderChat(id).then(function(){
@@ -263,14 +264,16 @@ $_('grapeTweet').main(function(){
   
 // 	check the current login  
 	(new $$.Promise(function(done){
+        var spinner= $('dom').select('.splash .loading').classList.remove('hidden');
 		if(!App.twitterSocket.isLoggedIn()){
-    	
+            var button= $('dom').select('.splash .signIn');
 			App.twitterSocket.requestToken('/oauth/request_token', 'http://grape-tweet.com/callback').then(function(){
 				$('dom').select('.splash .signIn').classList.remove('hidden');
 			});
-    
-			$('dom').select('.splash .signIn').addEventListener('click', function(){
+			button.addEventListener('click', function(){
 				App.twitterSocket.authenticate('/oauth/authenticate');
+                button.classList.add('hidden');
+                spinner.classList.remove('hidden');
 				$$.onOAuthCallback= function(data){
                     delete $$.onOAuthCallback;
                     $$.console.log(data);
@@ -278,77 +281,66 @@ $_('grapeTweet').main(function(){
 						App.account.userId= userId;
 						done();
 					});
-					$('dom').select('.splash .loading').classList.remove('hidden');
 				};
 			}, false);
-    
   		}else{
 			done();
-			$('dom').select('.splash .loading').classList.remove('hidden');
+			spinner.classList.remove('hidden');
 		}
-	})).then(function(){
-		App.jobs.push(new Promise(function(done){			
-                Storage.checkDirectMessages().then(function(directMessagesStored){
-				if(!directMessagesStored)
-				    Net.downloadDirectMessages().then(done);
-				else
-					done();
-			});
-		}));
-		
-		App.jobs.push(new Promise(function(done){
-			$$.Promise.all([
-				Storage.getApplicationState('account'), 
-				Storage.getApplicationState('dataStatus'), 
-				Storage.getApplicationState('syncStatus'),
-				Storage.getApplicationState('pushServer')
-			]).then(function(values){
-				App.account.apply(values[0]);
-                App.dataStatus.apply(values[1]);
-                App.syncStatus.apply(values[2]);
-                App.pushServer.apply(values[3]);
-				
-                if(App.syncStatus.contacts.lastSync === '')
-                    Net.syncContacts().then(function(){
-                        UI.renderContacts().then(done);
-                    });
-                else{
-                    Net.syncContacts().then(function(){
-                        UI.renderContacts().then();
-                    });
-                    done();
-                }
-			});
-		}));
-		
-		$$.Promise.all(App.jobs).then(function(){
-			App.jobs= [];
-		
-			App.jobs.push(UI.renderChats());
-			App.jobs.push(new $$.Promise(function(done){
-                Bindings.navigation.apply($('hash'));
-				$('hash').restore();
-			
-				if($$.location.hash.indexOf('/chat') > -1)
-					UI.renderChat(App.dataStatus.lastChat).then(done);
-				else
-					done();
-			}));
-			
-			$$.navigator.mozSetMessageHandler('push-register', function(){
-				updatePushServer(true);
-			});
-			
-            updatePushServer();
-    	
-			$$.Promise.all(App.jobs).then(function(){
-//				the app is ready, so we are ready to handle pushs 
 
-                Bindings.ui.apply($$);
+//  check direct messages and contacts
+	})).then(function(){
+		$$.Promise.all([
+            new Promise(function(done){			
+                Storage.checkDirectMessages().then(function(directMessagesStored){
+				    if(!directMessagesStored)
+                        Net.downloadDirectMessages().then(done);
+                    else
+                        done();
+                });
+            }),
+            
+            new Promise(function(done){
+                Storage.getApplicationStates().then(function(values){
+                    values.forEach(function(item){
+                        App[item.name].apply(item);
+                    });
+                    if(App.syncStatus.contacts.lastSync === ''){
+                        Net.syncContacts().then(function(){
+                            UI.renderContacts().then(done);
+                        });
+                    }else{
+                        Net.syncContacts().then(function(){
+                            UI.renderContacts().then();
+                        });
+                        done();
+                    }
+                });
+            })
+        ]).then(function(){
+            App.updatePushServer();
+    	
+			$$.Promise.all([
+                UI.renderChats(),
+                
+                new $$.Promise(function(done){
+                    Bindings.navigation.apply($('hash'));
+                    $('hash').restore();
+			
+                    if($$.location.hash.indexOf('/chat') > -1)
+                        UI.renderChat(App.dataStatus.lastChat).then(done);
+                    else
+                        done();
+                })
+            ]).then(function(){
+//				the app is ready, so we are ready to handle pushs 
+                Bindings.ui();
+                Bindings.systemMessages.apply($$);
 				
 // 				everything is done we can open the UI.
 				$('dom').select('.splash .loading').classList.add('hidden');
 				$('dom').select('.client').classList.remove('right');
+                $('dom').select('head meta[name="theme-color"]').setAttribute('content', '#29a1ed');
 				$('dom').select('.splash').transition('left').then(function(){
 					$('dom').select('.splash').classList.add('hidden');
 				});

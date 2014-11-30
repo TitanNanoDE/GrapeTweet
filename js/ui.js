@@ -148,6 +148,18 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 						var contacts= messages.pop();
 						
 						list.innerHTML= '';
+                        
+//                      sort conversations
+                        var l= [];
+                        var covNew= {};
+                        $$.Object.keys(conversations).forEach(function(id, index){
+                           l.push({ id:id, created_at : messages[index].created_at });
+                        });
+                        l.sort(Misc.sortByDate).reverse().forEach(function(item){
+                           covNew[item.id]= conversations[item.id]; 
+                        });
+                        messages.sort(Misc.sortByDate).reverse();
+                        conversations= covNew;
 				
 						$$.Object.keys(conversations).forEach(function(userId, index){
 							var latest= messages[index];

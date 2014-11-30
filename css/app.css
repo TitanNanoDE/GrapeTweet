@@ -38,7 +38,7 @@ ul{
 	left: 0;
 	top: 0;
 	overflow: hidden;
-	transition: left ease-in-out 0.5s
+	transition: transform ease-in-out 0.5s
 }
 
 .splash{
@@ -50,7 +50,7 @@ ul{
 }
 
 .splash.left{
-	left: -100%;
+	transform: translateX(-100%);
 }
 
 .splash.hidden{
@@ -87,7 +87,7 @@ ul{
 	font-size: 25px;
 }
 
-.splash button.hidden, .splash input.hidden, .splash .logo.hidden, .splash .loading.hidden{
+.splash button.hidden, .splash .loading.hidden{
 	display: none;
 }
 
@@ -125,7 +125,7 @@ ul{
 }
 
 .client.right{
-	left: 100%;
+	transform: translateX(100%);
 }
 
 .sheet{
@@ -136,19 +136,19 @@ ul{
 	width: 100%;
 	overflow: hidden;
 	display: none;
-	transition: left ease-in-out 0.5s, top ease-in-out 0.5s;
+	transition: transform ease-in-out 0.5s;
 }
 
 .sheet.left{
-	left: -100%;
+	transform: translateX(-100%);
 }
 
 .sheet.right{
-	left: 100%;
+	transform: translateX(100%);
 }
 
 .sheet.bottom{
-	top: 100%;
+	transform: translateY(100%);
 }
 
 .sheet.active, .sheet.visible{
@@ -161,24 +161,24 @@ ul{
 	top: 0;
 	height: 100%;
 	width: 100%;
-	transition: left ease-in-out 0.5s;
+	transition: transform ease-in-out 0.5s;
 }
 
 .sheet .page.left{
-	left: -100%;
+	transform: translateX(-100%);
 }
 
 .sheet .page.right{
-	left: 100%;
+	transform: translateX(100%);
 }
 
 .sheet .page.overlay{
-	transition: left ease-in-out 0.4s;
+	transition: transform ease-in-out 0.4s;
 	box-shadow: 0 -3px 3px #000;
 }
 
 .sheet .page.overlay.right{
-	left: 102%;
+	transform: translateX(102%);
 }
 
 .header{
@@ -367,7 +367,7 @@ ul{
 	padding: 10px 0;
 }
 
-.tweet *, .conv *, .contact *{
+.tweet div, .conv div, .contact div{
 	pointer-events: none;
 }
 
@@ -614,6 +614,27 @@ ul{
 
 .profile .profile-info button.following:active{
 	background: #2fb0f4;
+}
+
+.about .body{
+    padding: 0 7vw;
+    color: #4D4D4D;
+}
+
+h2{
+    margin: 5vh 0 2vh;
+}
+
+h3{
+    margin: 3vh 0 0;
+}
+
+.about p{
+    margin: 2vh 0;
+}
+
+.about .logo{
+    text-align: center;
 }
 
 .page-dot{
