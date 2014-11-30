@@ -179,6 +179,7 @@ $_('grapeTweet').main(function(){
 						notification.addEventListener('click', notificationClick, false);
 					}else{
 						Audio.play('recieved');
+                        $$.navigator.vibrate([250,300,250]);
 					}	
 				}else if(!$$.document.hidden){
 					Audio.play('sent');
@@ -264,7 +265,7 @@ $_('grapeTweet').main(function(){
   
 // 	check the current login  
 	(new $$.Promise(function(done){
-        var spinner= $('dom').select('.splash .loading').classList.remove('hidden');
+        var spinner= $('dom').select('.splash .loading');
 		if(!App.twitterSocket.isLoggedIn()){
             var button= $('dom').select('.splash .signIn');
 			App.twitterSocket.requestToken('/oauth/request_token', 'http://grape-tweet.com/callback').then(function(){
