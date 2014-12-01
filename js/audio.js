@@ -1,4 +1,4 @@
-$_('grapeTweet').modules('Audio', [], function(App, done){
+$_('grapeTweet').module('Audio', [], function(App, done){
     
     var sounds= {
       	recieved : new $$.Audio('/sounds/recived.mp3'),
