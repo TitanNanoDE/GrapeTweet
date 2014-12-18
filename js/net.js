@@ -379,9 +379,7 @@ $_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
 					
 					message.placeholder= true;
 					
-					App.integrateIntoMessagesChain(message, conversation).then(function(){
-						App.ui.renderChat(App.dataStatus.lastChat).then(done);
-					});
+					App.integrateIntoMessagesChain(message, conversation).then(done);
 				});
 				request.catch(function(e){
 					$$.console.error(e);
@@ -389,13 +387,21 @@ $_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
 			});
 		},
 		
-		fetchNewHomeTweets : function(){
-			return new $$.Promise(function(done){
-				App.twitterSocket.get('/1.1/statuses/home_timeline.json', { trim_user : true,  count : 100, since_id : App.dataStatus.lastTweets.timeline }).then(function(tweets){
-					tweets= $$.JSON.parse(tweets);
-
+		fetchNewHomeTweets : function(timeline){
+			return new $$.Promise(function(done, error){
+                var data= { count : 100 };
+                if(timeline.last) data.since_id= timeline.last;
+				App.twitterSocket.get('/1.1/statuses/home_timeline.json', data).then(function(tweets){
+					tweets= $$.JSON.parse(tweets).reverse();
+                    tweets.forEach(function(item){
+                        App.integrateIntoTimeline(item, timeline);
+                    });
 					done();
-				});
+				},
+                function(e){
+                    $$.console.error(e);
+                    error();
+                });
 			});
 		}
 	};

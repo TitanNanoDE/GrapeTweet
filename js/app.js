@@ -134,7 +134,7 @@ $_('grapeTweet').main(function(){
 	this.updatePushServer= function(force){
 		if(!App.pushServer.ready){
             registerPushClient();
-        }else if( (Date.now() - App.pushServer.lastRefresh) > 7200000 && force){
+        }else if( (Date.now() - App.pushServer.lastRefresh) > 7200000 || force){
             requestEndpoint(function(endpoint){
                 App.pushServerSocket.request('/updateEndpoint', $$.JSON.stringify({ id : App.pushServer.id, endpoint : endpoint })).then(function(data){
                     data= $$.JSON.parse(data);
@@ -163,10 +163,10 @@ $_('grapeTweet').main(function(){
 	this.notify= function(conversationId){
 		Storage.getConversation(conversationId).then(function(conversation){
 			Storage.getMessage(conversation.lastMessage).then(function(message){
-				if(message.sender_id != App.account.userId){
-					UI.renderChats();
-					UI.renderFooterStatus(App.account);
+                UI.renderChats();
 				
+                if(message.sender_id != App.account.userId){
+					UI.renderFooterStatus(App.account);				
 					if($$.document.hidden || $$.location.hash.indexOf('/messages') < 0 || ($$.location.hash.indexOf('/chat') > -1 && App.dataStatus.lastChat != message.sender_id)){
 						var textBody= (conversation.unread < 2) ? Misc.cutdown(message.text) : conversation.unread + ' new messages';
 						
@@ -206,61 +206,109 @@ $_('grapeTweet').main(function(){
 	};
 	
 	this.integrateIntoMessagesChain= function(message, conversation){
+        var self= this;
 		return new $$.Promise(function(done){
-			if(conversation && conversation.lastMessage != message.id_str){
-				message.last= conversation.lastMessage;
-				message.next= null;
-				
-				conversation.lastMessage= message.id_str;
-				if(message.sender_id != App.account.userId){
-					conversation.unread= (conversation.unread > 0) ? conversation.unread+1 : 1;
+            if(!self.active){
+                self.active= true;
+                self.integrate.apply(self, [message, conversation, done]);
+                self.next();
+            }else{
+                self.queue.push([message, conversation, done]);
+            }
+		});
+	}.bind({
+        queue : [],
+        active : false,
+        next : function(){
+            if(this.queue.length > 0){
+                this.integrate.apply(this, this.queue.shift());
+                this.next();
+            }else{
+                this.active= false;
+            }
+        },
+        integrate : function(message, conversation, callback){
+            if(conversation && conversation.lastMessage != message.id_str){
+                message.last= conversation.lastMessage;
+                message.next= null;
+                        
+                conversation.lastMessage= message.id_str;
+                if(message.sender_id != App.account.userId){
+                    conversation.unread= (conversation.unread > 0) ? conversation.unread+1 : 1;
                     App.account.unreadMessages+= 1;
                 }
 				
-				$$.Promise.all([Storage.storeMessage(message), Storage.storeConversation(conversation)]).then(function(){
-					Storage.getMessage(message.last).then(function(oldMessage){
-						oldMessage.next= message.id_str;
-				        Storage.storeMessage(oldMessage).then(done);
-					});
-				});
-			}else if(conversation){
-				Storage.getMessage(message.id_str).then(function(oldMessage){
-					message.last= oldMessage.last;
-					message.next= oldMessage.next;
-					Storage.storeMessage(message).then(done);
-				});
-			}else{
-				var convId= (message.sender_id == App.account.userId) ? message.recipient_id : message.sender_id;
-				message.last= null;
-				message.next= null;
-				
-				$$.Promise.all([ Storage.storeConversation(App.createConversation(convId, message.id_str, (message.sender_id != App.account.userId) ? 1 : 0)), App.storage.storeMessage(message) ]).then(done);
-			}
-		});
-	};
+                $$.Promise.all([Storage.storeMessage(message), Storage.storeConversation(conversation)]).then(function(){
+                    Storage.getMessage(message.last).then(function(oldMessage){
+                        oldMessage.next= message.id_str;
+                        Storage.storeMessage(oldMessage).then(callback);
+                    });
+                });
+            }else if(conversation){
+                Storage.getMessage(message.id_str).then(function(oldMessage){
+                    message.last= oldMessage.last;
+                    message.next= oldMessage.next;
+                    Storage.storeMessage(message).then(callback);
+                });
+            }else{
+                var convId= (message.sender_id == App.account.userId) ? message.recipient_id : message.sender_id;
+                message.last= null;
+                message.next= null;
+	   			
+                $$.Promise.all([ Storage.storeConversation(App.createConversation(convId, message.id_str, (message.sender_id != App.account.userId) ? 1 : 0)), App.storage.storeMessage(message) ]).then(callback);
+            }
+        }
+    });
 
     this.integrateIntoTimeline= function(tweet, timeline){
+        var self= this;
         return new $$.Promise(function(done){
-           if(timeline.last != tweet.id_str){
-               tweet.last= timeline.last;
-               tweet.next= null;
-
-               timeline.last= tweet.id_str;
-               $$.Promise.all([Storage.storeTweet(tweet, timeline.id), Storage.storeTimeline(timeline), Storage.getTweet(tweet.last, timeline.id)]).then(function(values){
-                   var lastTweet= values[2];
-                   lastTweet.next= tweet.id_str;
-                   Storage.storeTweet(lastTweet, timeline.id).then(done);
-               });
-           }
+            if(!self.active){
+                self.active= true;
+                self.integrate.apply(self, [tweet, timeline, done]);
+                self.next();
+            }else{
+                self.queue.push([tweet, timeline, done]);
+            }
         });
-    };
+    }.bind({
+        queue : [],
+        active : false,
+        integrate : function(tweet, timeline, callback){
+            if(timeline.last != tweet.id_str){
+                tweet.last= timeline.last;
+                tweet.next= null;
+
+                timeline.last= tweet.id_str;
+                if(tweet.last !== null){
+                    $$.Promise.all([Storage.storeTweet(tweet, timeline), Storage.storeTimeline(timeline), Storage.getTweet(tweet.last, timeline.id)]).then(function(values){
+                        var lastTweet= values[2];
+                        lastTweet.next= tweet.id_str;
+                        Storage.storeTweet(lastTweet, timeline).then(callback);
+                    });
+                }else{
+                    $$.Promise.all([Storage.storeTweet(tweet, timeline), Storage.storeTimeline(timeline)]).then(callback);
+                }
+            }else{
+                callback();
+            }
+        },
+        next : function(){
+            if(this.queue.length > 0){
+                this.integrate.apply(this, this.queue.shift());
+                this.next();
+            }else{
+                this.active= false;
+            }
+        }
+    });
 
     this.createTimeline= function(name, id){
-        Storage.storeTimeline({
+        return {
             name : name,
             id : id,
-            las : null
-        });
+            last : null
+        };
     };
   
 // 	check the current login  
@@ -289,7 +337,7 @@ $_('grapeTweet').main(function(){
 			spinner.classList.remove('hidden');
 		}
 
-//  check direct messages and contacts
+//  check direct messages, timeline and contacts
 	})).then(function(){
 		$$.Promise.all([
             new Promise(function(done){			
@@ -315,6 +363,21 @@ $_('grapeTweet').main(function(){
                             UI.renderContacts().then();
                         });
                         done();
+                    }
+                });
+            }),
+            
+            new Promise(function(done){
+                Storage.getTimeline('$home').then(function(timeline){
+                    if(!timeline){
+                        timeline= App.createTimeline('Home', '$home');
+                        Net.fetchNewHomeTweets(timeline).then(function(){
+                            UI.renderTimeline(timeline);
+                            UI.renderTweets(timeline).then(done);
+                        });
+                    }else{
+                        UI.renderTimeline(timeline);
+                        UI.renderTweets(timeline).then(done);
                     }
                 });
             })

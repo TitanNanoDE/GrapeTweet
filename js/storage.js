@@ -26,6 +26,34 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
     
     var conversationsCached= false;
     var contactsCached= false;
+    
+    var getChunk= function(store, id, includeLast){
+        return new $$.Promise(function(success){
+            var list= [];
+            var nextItem= id;
+				
+            (new AsyncLoop(function(next, exit){
+                var request= db.transaction([store]).objectStore(store).get(nextItem);
+					
+                request.onsuccess= function(e){
+                    var item= e.target.result;
+                    nextItem= item.last;
+				
+                    if(includeLast || item.id_str != id)
+                        list.push(item);
+				
+                    if(nextItem !== null && list.length <= 20)
+                        next();
+                    else
+                        exit();
+                };
+					
+                request.onerror= exit;
+            })).incalculable().then(function(){
+                success(list);
+            });
+        });    
+    };
 	
 	dbRequest.onerror= function(){
 		$$.console.error('unable to access the DB!');
@@ -166,32 +194,8 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
 			});
 		},
 		
-		getMessagesChunkBefore : function(id, include){
-			return new Promise(function(success){
-				var list= [];
-				var nextMessage= id;
-				
-				(new AsyncLoop(function(next, exit){
-					var request= db.transaction(['direct_messages']).objectStore('direct_messages').get(nextMessage);
-					
-					request.onsuccess= function(e){
-						var message= e.target.result;
-						nextMessage= message.last;
-						
-						if(include || message.id_str != id)
-							list.push(message);
-						
-						if(nextMessage !== null && list.length <= 20)
-							next();
-						else
-							exit();
-					};
-					
-					request.onerror= exit;
-				})).incalculable().then(function(){
-					success(list);
-				});
-			});
+		getMessagesChunkBefore : function(id, includeLast){
+            return getChunk('direct_messages', id, includeLast);
 		},
 		
 		getNewMessagesSince : function(id){
@@ -352,9 +356,26 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
             });
         },
         
+        getTimeline : function(id){
+			return new $$.Promise(function(success){
+                var request= db.transaction(['timelines']).objectStore('timelines').get(id);
+
+                request.onsuccess= function(e){
+                    success(e.target.result);
+                };
+				
+                request.onerror= function(){
+                    success(null);
+                };
+			});	
+		},
+        
         storeTweet : function(tweet, timeline){
             return new $$.Promise(function(done, error){
-                tweet.id+= '@'+timeline;
+                tweet= JSON.parse(JSON.stringify(tweet));
+                tweet.id_str+= '@'+timeline.id;
+                tweet.last+= '@'+timeline.id;
+                if(tweet.next !== null) tweet.next+= '@'+timeline.id;
                 var request= db.transaction(['tweets'], 'readwrite').objectStore('tweets').put(tweet);
                 
                 request.onsuccess= function(e){
@@ -373,7 +394,9 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
                 
                 request.onsuccess= function(e){
                     var tweet= e.target.result;
-                    tweet.id= tweet.id.split('@')[0];
+                    tweet.id_str= tweet.id_str.split('@')[0];
+                    tweet.last= tweet.last.split('@')[0];
+                    tweet.next= (tweet.next !== null) ? tweet.next.split('@')[0] : tweet.next;
                     done(tweet);
                 };
                 
@@ -381,6 +404,15 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
                     error(e);
                 };
             });
-        }
+        },
+        
+        getTweetsChunkBefore : function(id, timeline, includeLast){
+            return getChunk('tweets', id+'@'+timeline.id, includeLast).then(function(chunck){
+                chunck.forEach(function(item){
+                    item.id_str= item.id_str.split('@')[0];
+                });
+                return chunck;
+            });
+		},
 	};
 });

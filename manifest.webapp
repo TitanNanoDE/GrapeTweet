@@ -30,6 +30,16 @@
     { "push-register": "/index.html" },
     { "notification" : "/index.html" }
   ],
+  "activities": {
+    "share": {
+        "href": "./index.html",
+        "disposition": "window",
+        "filters": {
+            "type": ["url"]
+        },
+        "returnValue": false
+    }
+  },
   "redirects": [
     {"from": "http://grape-tweet.com/callback",
      "to": "/callback.html"}

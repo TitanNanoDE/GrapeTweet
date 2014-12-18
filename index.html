@@ -18,26 +18,6 @@
 
 		<!-- streams sheet -->
 		<div class="sheet streams">
-			<div class="timeline page">
-				<header class="header"><div class="title">Timeline</div><a href="#!/profile" class="item profile"></a><a href="#!/new-tweet" class="item new-post"></a></header>
-				<div class="body">
-					<ul class="tweet-list">
-						<li class="tweet collapsed table">
-							<div class="user-image-container td"><span class="user-image"></span></div>	
-							<div class="td">
-								<div class="tweet-header tr">
-									<div class="td"><span class="displayname">TitanNano</span><span class="username">@titannano</span></div>
-									<div class="datetime td">0s</div>	
-								</div>
-									<div class="tweet-body tr">
-									<div class="td text">This is a test tweet for the new SocialOn app. Just some random text without any sense!! :-D :D :-) :)</div>
-								</div>
-								<div class="tweet-footer"></div>
-							</div>
-						</li>
-					</ul>
-				</div>
-			</div>
 		</div>
 		
 		<!-- messages sheet -->
@@ -155,7 +135,7 @@
 	</div>
 	
 	<template id="tweet-layout">
-		<li class="tweet collapsed table">
+		<li class="tweet collapsed table" data-id="">
 			<div class="user-image-container td"><span class="user-image"></span></div>	
 			<div class="td">
 				<div class="tweet-header tr">
@@ -210,10 +190,11 @@
 		</li>
 	</template>
 	
-	<template id="stream-page-layout">
-		<div class="page">
-			<header class="header"><div class="title"></div><div class="item profile"></div></header>
+	<template id="timeline-layout">
+		<div class="page" data-id="">
+            <header class="header"><div class="title"></div><a href="#!/profile"><div class="item profile"></div></a></header>
 			<div class="body">
+                <div class="check-new loader closed">release to check for new Tweets</div>
 				<ul class="tweet-list"></ul>
 			</div>
 		</div>

@@ -10,42 +10,41 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 		var list= $('dom').select('.message-list');
 		var firstElement= $('dom').select('.page.chat .message-list li');
         var element= null;
-		
-		if(item.sender_id == App.account.userId){
-			element= template_my.cloneNode(true);
-			element.querySelector('.message').dataset.id= item.id_str;
-		}else{
-            element= template_default.cloneNode(true);
-			element.querySelector('.user-image').style.setProperty('background-image', 'url('+ contact.profile_image_url +')');
-			element.querySelector('.message').dataset.id= item.id_str;
-		}
+                
+		if(!list.querySelector('li[data-id="'+ item.id_str +'"]')){
+            if(item.sender_id == App.account.userId){
+                element= template_my.cloneNode(true);
+                element.querySelector('.message').dataset.id= item.id_str;
+            }else{
+                element= template_default.cloneNode(true);
+                element.querySelector('.user-image').style.setProperty('background-image', 'url('+ contact.profile_image_url +')');
+                element.querySelector('.message').dataset.id= item.id_str;
+            }
 							
-//		format text
-		renderEntities(item.text, item.entities, element.querySelector('.text'));
+//	 	    format text
+            renderEntities(item.text, item.entities, element.querySelector('.text'));
 							
-//		timestamp
-		var date= new Date(item.created_at);
-		element.querySelector('.date').textContent= date.toLocaleDateString() + ', ' + date.toLocaleTimeString();
+//		    timestamp
+            var date= new Date(item.created_at);
+            element.querySelector('.date').textContent= date.toLocaleDateString() + ', ' + date.toLocaleTimeString();
 		
-		if(!insertBefore)
-			list.appendChild(element);
-		else
-			list.insertBefore(element, firstElement);
+            if(!insertBefore)
+                list.appendChild(element);
+            else
+                list.insertBefore(element, firstElement);
+        }
 	};
     
-    var renderEntities= function(text, entities, target){
+    var renderEntities= function(text, entities, target, tweet){
 //      add medias
         if(entities.media){
             entities.media.forEach(function(item){
                 if(item.type == 'photo'){
                     text= text.replace(item.url, '');
                     var img= $('dom').create('img');
-                    var chatBody= $('dom').select('.page.chat .body');
                     
                     img.height= item.sizes.large.h / item.sizes.large.w * ($$.innerWidth - 34 - ($$.innerWidth / 100 * 25));
                     target.appendChild(img);
-                    chatBody.scrollTop= chatBody.scrollHeight;
-                    var url= item.media_url;
                     Net.cacheImage(item.media_url).then(function(list){
                         img.src= list[0];
                         if($$.MozActivity){
@@ -53,10 +52,22 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
                                 new $$.MozActivity({
                                     name : 'open',
                                     data : {
-                                        type : 'image/'+url.substr(url.lastIndexOf('.')+1),
+                                        type : list[1].type,
                                         blob : list[1]
                                     }
                                 });
+                            });
+                        }
+                        
+                        if(tweet){
+                            img.addEventListener('contextmenu', function(e){
+                                e.preventDefault();
+                                var link= $('dom').create('a');
+                                link.href= list[0];
+                                link.download= item.media_url.substr(item.media_url.lastIndexOf('/'));
+                                $$.document.body.appendChild(link);
+                                link.click();
+                                $$.document.body.removeChild(link);
                             });
                         }
                     });
@@ -69,7 +80,7 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
         }
 		
 //	    set text
-        var element= $('dom').create('span');
+        var element= $('dom').create('div');
         element.innerHTML= text;
         target.appendChild(element);
     };
@@ -147,14 +158,21 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 			});
 		},
 		
-		renderChats : function(){
+		renderChats : function(chatId){
 			return new Promise(function(done){
-				Storage.getConversationsList().then(function(conversations){
+				((chatId) ? Storage.getConversation(chatId) : Storage.getConversationsList()).then(function(conversations){
 					var promises= [];
-				
-					$$.Object.keys(conversations).forEach(function(key){
-						promises.push(Storage.getMessage(conversations[key].lastMessage));
-					});
+
+                    if(chatId){
+                        promises.push(Storage.getMessage(conversations.lastMessage));
+                        var conv= conversations;
+                        conversations= {};
+                        conversations[conversations.id]= conv;
+                    }else{
+                        $$.Object.keys(conversations).forEach(function(key){
+                            promises.push(Storage.getMessage(conversations[key].lastMessage));
+                        });
+                    }
 					
 					promises.push(Storage.getContacts());
 				
@@ -162,9 +180,7 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 						var template= $('dom').select('#conv-layout').content;
 						var list= $('dom').select('.conv-list');
 						var contacts= messages.pop();
-						
-						list.innerHTML= '';
-                        
+						                        
 //                      sort conversations
                         var l= [];
                         var covNew= {};
@@ -181,6 +197,7 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 							var latest= messages[index];
 							var user= contacts[userId];
 							var conv= conversations[userId];
+                            var old= null;
 				
 							var element= template.cloneNode(true);
 			
@@ -201,8 +218,12 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 				
 							element.querySelector('.datetime').textContent= getTimeSince(latest.created_at);
 							element.querySelector('.conv-body .text').textContent= ((latest.text.length <= 40) ? latest.text : latest.text.substr(0, 40) + '...');
-				
-							list.appendChild(element);
+				            
+                            if(old= list.querySelector('[data-user-id="'+ userId +'"]')){
+                                list.replaceChild(element, old);
+                            }else{
+                                list.appendChild(element);
+                            }
 						});
 						
 						done();
@@ -211,7 +232,7 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 			});
 		},
 		
-		renderChat : function(userId){			
+		renderChat : function(userId){		
 			return new $$.Promise(function(done){
 				$$.Promise.all([Storage.getConversation(userId), Storage.getContact(userId)]).then(function(values){
 					var conversation= values[0];
@@ -302,7 +323,120 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 			}else{
 				label.classList.add('hidden');
 			}
-		}
+		},
+        
+        renderTweets : function(timeline){
+            return Storage.getTweetsChunkBefore(timeline.last, timeline, true).then(function(tweets){
+                var template= $('dom').select('#tweet-layout').content;
+                var list= $('dom').select('.streams .page[data-id="'+ timeline.id +'"] .tweet-list');
+                
+                list.innerHTML= '';
+                tweets.forEach(function(tweet){
+                    var element= template.cloneNode(true);
+                    
+                    element.querySelector('.tweet').dataset.id= tweet.id_str;
+                    element.querySelector('.displayname').textContent= tweet.user.name;
+                    element.querySelector('.username').textContent= '@' + tweet.user.screen_name;
+                    element.querySelector('.user-image').style.setProperty('background-image', 'url('+ tweet.user.profile_image_url +')');
+                    element.querySelector('.datetime').textContent= getTimeSince(tweet.created_at);
+                    renderEntities(tweet.text, tweet.entities, element.querySelector('.text'), true);
+                    
+                    list.appendChild(element);
+                });
+            });
+        },
+        
+        renderTimeline : function(timeline){
+            var template= $('dom').select('#timeline-layout').content;
+            var element= template.cloneNode(true);
+            
+            element.querySelector('.title').textContent= timeline.name;
+            element.querySelector('.page').dataset.id= timeline.id;
+            element.querySelector('.body').addEventListener('scroll', function(e){
+                e.preventDefault();
+            });
+            element.querySelector('.body').addEventListener('touchmove', function(e){
+                if((this.enabled || this.target.scrollTop === 0) && !this.open){
+                    if(!this.enabled){
+                        this.touch= e.touches.indexOf(e.changedTouches[0]);
+                        this.start= e.touches[this.touch].screenY;
+                        this.enabled= true;
+                        this.target.addEventListener('touchend', this.release.bind(this));
+                        this.element.classList.remove('closed');
+                    }else{
+                        var force= e.touches[this.touch].screenY - this.start;
+                        var y= -75+(force / 3);
+                        if(y > -76){
+                            this.element.style.setProperty('margin-top', y + 'px');
+                        }else{
+                            this.release.apply(this);
+                        }
+                    }
+                }
+            }.bind({
+                target : element.querySelector('.body'),
+                element : element.querySelector('.check-new'),
+                timeline : timeline.id,
+                enabled: false,
+                start : 0,
+                touch : null,
+                open : false,
+                release : function(e){
+                    if(this.enabled && (!e || e.touches.indexOf(this.touch) < 0)){
+                        var state= parseInt(this.element.style.getPropertyValue('margin-top').replace(/px/, ''));
+                        if(state > -37){
+                            this.element.classList.add('open');
+                            this.element.textContent= 'checking for new Tweets...';
+                            this.open= true;
+                            var data= this;
+                            Storage.getTimeline(this.timeline).then(function(timeline){
+                                Net.fetchNewHomeTweets(timeline).then(function(){
+                                    interface.renderTweets(timeline).then(function(){
+                                        data.element.classList.add('closed');
+                                        data.element.classList.remove('open');
+                                        data.element.textContent= "release to check for new Tweets";
+                                        data.open= false;
+                                    });
+                                },
+                                function(){
+                                    data.element.textContent= 'ratelimit exceed, try again later.';
+                                    $$.setTimeout(function(){
+                                        data.element.classList.add('closed');
+                                        data.element.classList.remove('open');
+                                        data.element.textContent= "release to check for new Tweets";
+                                        data.open= false;
+                                    }, 10000);
+                                }); 
+                            });
+                        }else{
+                            this.element.classList.add('closed');
+                        }
+                        this.start= 0;
+                        this.enabled= false;
+                        this.element.style.setProperty('margin-top', '');
+                    }
+                }
+            }));
+            
+            element.querySelector('.header').addEventListener('click', function(){
+                if(!this.active){
+                    this.active= true;
+                    var int= $$.setInterval(function(){
+                        if(this.element.scrollTop > 0){ 
+                            this.element.scrollTop-= 40;
+                        }else{
+                            $$.clearInterval(int);
+                            this.active= false;
+                        }
+                    }.bind(this), 0);
+                }
+            }.bind({
+                element : element.querySelector('.body'),
+                active : false
+            }));
+            
+            $('dom').select('.streams').appendChild(element);
+        }
 	};
 	
 	done(interface);

@@ -33,14 +33,13 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
             }
         }, false);
         
-        //	    visibilty change
-        $$.addEventListener('visibiltychange', function(){
-            if(this.location.hash.indexOf('/chat') > -1){
-                var chatPage= $('dom').select('.message-list');
-                UI.renderChat(chatPage.dataset.userId);
-            }
-        }, false);
-        
+        this.addEventListener('visibilitychanged', function(){
+           if(!$$.document.hidden){
+               if($$.location.hash.indexOf('/chat') > -1)
+                   UI.renderChat($('dom').select('.message-list').dataset.userId);
+           } 
+        });
+
         //	mouse events for lists
         $('dom').select('.conv-list').addEventListener('click', App.openChat, false);
         $('dom').select('.contact-list').addEventListener('click', App.openChat, false);
@@ -49,19 +48,21 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
             $$.navigator.vibrate([150]);
             $$.location.hash= '#!/profile';
         });
-        $('dom').select('.tweet-list').addEventListener('click', function(){
+/*        $('dom').select('.tweet-list').addEventListener('click', function(){
 			if(this.classList.contains('collapsed'))
 				this.classList.remove('collapsed');
 			else
 				this.classList.add('collapsed');
-		}, false);
+		}, false);*/
         
         //	chat
         $('dom').select('.page.chat .send').addEventListener('click', function(){
             var message= $('dom').select('.page.chat .text-box .text');
             if(message.textContent !== ""){
                 Net.sendDirectMessage(message.textContent).then(function(){
-                    message.textContent= '';
+                    UI.renderChat(App.dataStatus.lastChat).then(function(){
+                        message.textContent= '';
+                    });
                 });
             }
         }, false);
@@ -76,7 +77,9 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
                 e.preventDefault();
                 var message= $('dom').select('.page.chat .text-box .text');
                 Net.sendDirectMessage(message.textContent).then(function(){
-                    message.textContent= '';
+                    UI.renderChat(App.dataStatus.lastChat).then(function(){
+                        message.textContent= '';
+                    });
                 });
             }
         }, false);
@@ -84,9 +87,9 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
         //	chat scrollTop
         $('dom').select('.page.chat .body').addEventListener('scroll', function(e){
             if(e.target.scrollTop === 0 && !App.loadingChunk){
-                App.dataStatus.loadingChunk= true;
+                App.loadingChunk= true;
                 UI.renderAdditionalChunk(App).then(function(){
-                    App.dataStatus.loadingChunk= false;
+                    App.loadingChunk= false;
                 });
             }
         }, false);
@@ -167,6 +170,15 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
                     }
                 });
             });
+        });
+        
+        this.navigator.mozSetMessageHandler('activity', function(a) {
+            if (a.source.name === 'share') {
+                if (a.source.data.type == 'url') {
+                    $$.location.hash= '#!/messages';
+                    $('dom').select('.text-box .text').textContent= a.source.data.url;
+                }
+            }
         });
     };
     
