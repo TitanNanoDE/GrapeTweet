@@ -33,7 +33,7 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
             }
         }, false);
         
-        this.addEventListener('visibilitychanged', function(){
+        $$.addEventListener('visibilitychange', function(){
            if(!$$.document.hidden){
                if($$.location.hash.indexOf('/chat') > -1)
                    UI.renderChat($('dom').select('.message-list').dataset.userId);
