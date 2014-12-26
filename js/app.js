@@ -312,6 +312,8 @@ $_('grapeTweet').main(function(){
     };
   
 // 	check the current login  
+	$$.console.time('checkLogin');
+	$$.console.time('start');
 	(new $$.Promise(function(done){
         var spinner= $('dom').select('.splash .loading');
 		if(!App.twitterSocket.isLoggedIn()){
@@ -333,80 +335,94 @@ $_('grapeTweet').main(function(){
 				};
 			}, false);
   		}else{
+			$$.console.timeEnd('checkLogin');
 			done();
 			spinner.classList.remove('hidden');
 		}
 
 //  check direct messages, timeline and contacts
 	})).then(function(){
-		$$.Promise.all([
-            new Promise(function(done){			
-                Storage.checkDirectMessages().then(function(directMessagesStored){
-				    if(!directMessagesStored)
-                        Net.downloadDirectMessages().then(done);
-                    else
-                        done();
-                });
-            }),
-            
-            new Promise(function(done){
-                Storage.getApplicationStates().then(function(values){
-                    values.forEach(function(item){
-                        App[item.name].apply(item);
-                    });
-                    if(App.syncStatus.contacts.lastSync === ''){
-                        Net.syncContacts().then(function(){
-                            UI.renderContacts().then(done);
-                        });
-                    }else{
-                        Net.syncContacts().then(function(){
-                            UI.renderContacts().then();
-                        });
-                        done();
-                    }
-                });
-            }),
-            
-            new Promise(function(done){
-                Storage.getTimeline('$home').then(function(timeline){
-                    if(!timeline){
-                        timeline= App.createTimeline('Home', '$home');
-                        Net.fetchNewHomeTweets(timeline).then(function(){
-                            UI.renderTimeline(timeline);
-                            UI.renderTweets(timeline).then(done);
-                        });
-                    }else{
-                        UI.renderTimeline(timeline);
-                        UI.renderTweets(timeline).then(done);
-                    }
-                });
-            })
-        ]).then(function(){
-            App.updatePushServer();
-    	
+		$$.console.time('loadingData');
+		$$.console.time('applicationStates');
+		Storage.getApplicationStates().then(function(values){
+			values.forEach(function(item){
+				App[item.name].apply(item);
+			});
+			$$.console.timeEnd('applicationStates');
+
+			Bindings.navigation.apply($('hash'));
+			$('hash').restore();
+
 			$$.Promise.all([
-                UI.renderChats(),
-                
-                new $$.Promise(function(done){
-                    Bindings.navigation.apply($('hash'));
-                    $('hash').restore();
-			
-                    if($$.location.hash.indexOf('/chat') > -1)
-                        UI.renderChat(App.dataStatus.lastChat).then(done);
-                    else
-                        done();
-                })
-            ]).then(function(){
-//				the app is ready, so we are ready to handle pushs 
-                Bindings.ui();
-                Bindings.systemMessages.apply($$);
+				new Promise(function(done){
+					if(App.syncStatus.contacts.lastSync === ''){
+						Net.syncContacts().then(function(done){
+							UI.renderContacts().then();
+							done();
+						});
+					}else{
+						Net.syncContacts().then(function(){
+							UI.renderContacts().then();
+						});
+						done();
+					}
+				}),
+
+				new Promise(function(done){
+					$$.console.time('--directMessages');
+					Storage.checkDirectMessages().then(function(directMessagesStored){
+						if(!directMessagesStored){
+							Net.downloadDirectMessages().then(done);
+						}else{
+							$$.console.timeEnd('--directMessages');
+							done();
+						}
+					});
+				}),
+
+				new Promise(function(done){
+					$$.console.time('--timeline');
+					Storage.getTimeline('$home').then(function(timeline){
+						if(!timeline){
+							timeline= App.createTimeline('Home', '$home');
+							Net.fetchNewHomeTweets(timeline).then(function(){
+								UI.renderTimeline(timeline);
+								UI.renderTweets(timeline).then(done);
+							});
+						}else{
+							UI.renderTimeline(timeline);
+							UI.renderTweets(timeline).then(done).then(function(){
+								$$.console.timeEnd('--timeline');
+							});
+						}
+					});
+				}),
+
+				UI.renderChats()
+			]).then(function(){
+				$$.console.timeEnd('loadingData');
+				App.updatePushServer();
 				
-// 				everything is done we can open the UI.
-				$('dom').select('.splash .loading').classList.add('hidden');
-				$('dom').select('.client').classList.remove('right');
-                $('dom').select('head meta[name="theme-color"]').setAttribute('content', '#29a1ed');
-				$('dom').select('.splash').transition('left').then(function(){
-					$('dom').select('.splash').classList.add('hidden');
+				$$.console.time('renderChat');
+				new Promise(function(done){
+					if($$.location.hash.indexOf('/chat') > -1)
+						UI.renderChat(App.dataStatus.lastChat).then(done);
+					else
+						done();
+				}).then(function(){
+					$$.console.timeEnd('renderChat');
+//					the app is ready, so we are ready to handle pushs
+					Bindings.ui();
+                	Bindings.systemMessages.apply($$);
+
+// 					everything is done we can open the UI.
+					$('dom').select('.splash .loading').classList.add('hidden');
+					$('dom').select('.client').classList.remove('right');
+					$('dom').select('head meta[name="theme-color"]').setAttribute('content', '#29a1ed');
+					$('dom').select('.splash').transition('left').then(function(){
+						$('dom').select('.splash').classList.add('hidden');
+						$$.console.timeEnd('start');
+					});
 				});
 			});
 		});

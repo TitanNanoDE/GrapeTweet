@@ -91,20 +91,35 @@ ul{
 }
 
 .splash .loading{
-	border: 5px solid rgb(255, 255, 255);
-	width: 40px;
-	height: 40px;
+    width: 40px;
+    height: 40px;
+    box-sizing: border-box;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    margin: 13vh auto 0;
+    background: #fff;
+    position: relative;
+    border-radius: 100%;
+    animation-duration: 0.8s;
+    animation-name: spinning;
+}
+
+.splash .loading div{
+	position: absolute;
+	width: 15px;
+	background: #2B6FCB;
 	border-radius: 100%;
-	border-bottom-width: 4px;
-	border-left-width: 4px;
-	border-top-width: 15px;
-	border-right-width: 15px;
-	box-sizing: border-box;
-	animation-iteration-count: infinite;
-	animation-name: spinning;
-	animation-duration: 0.8s;
-	animation-timing-function: ease-out;
-	margin: 13vh auto 0 auto;
+	height: 15px;
+}
+
+.splash .loading .bubble1{
+	right: 6px;
+	top: 6px;
+}
+
+.splash .loading .bubble2{
+	left: 6px;
+	bottom: 6px;
 }
 
 @keyframes spinning{
@@ -122,6 +137,31 @@ ul{
 	transform: translateX(100%);
 }
 
+.search{
+	background: #2490D5;
+	height: 3rem;
+	padding: 0.5rem;
+	box-sizing: border-box;
+}
+
+.search input{
+	width: 100%;
+	box-sizing: border-box;
+	color: rgb(255, 255, 255);
+	font-size: 1.3rem;
+	border-radius: 0.5rem;
+	height: 100%;
+	border: none;
+	border-bottom: solid .1rem rgba(255, 255, 255, 0.5);
+	padding: 0.1rem 0.5rem;
+	background: transparent;
+	transition: border-bottom-color 0.1s linear;
+}
+
+.search input:focus{
+	border-bottom-color: #fff;
+}
+
 .sheet{
 	position: absolute;
 	left: 0;
@@ -131,6 +171,14 @@ ul{
 	overflow: hidden;
 	display: none;
 	transition: transform ease-in-out 0.5s;
+}
+
+.client.fixed{
+	transition: none;
+}
+
+.client.searchOpen{
+	transform: translateY(3rem);
 }
 
 .sheet.left{
