@@ -8,6 +8,11 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
             height : this.innerHeight,
             width : this.innerWidth
         };
+
+		var keepKeyboardOpen= function(e){
+			e.preventDefault();
+			e.target.classList.add('active');
+		};
                 
         //	listen for keyboard
         $$.addEventListener('resize', function(){
@@ -18,8 +23,11 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
 			
 //		    	chat
                 $('dom').select('.client').classList.add('footer-closed');
-                var chatbody= $('dom').select('.chat .body');
-                chatbody.scrollTop= chatbody.scrollTopMax;
+//                var chatbody= $('dom').select('.chat .body');
+//                chatbody.scrollTop= chatbody.scrollTopMax;
+
+//				$$.addEventListener('mousedown', keepKeyboardOpen, false);
+
 //	     	keyboard is closed
             }else{
 //			    splash screen
@@ -27,6 +35,8 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
 			
 //		    	chat
                 $('dom').select('.client').classList.remove('footer-closed');
+
+//				$$.removeEventListener('mousedown', keepKeyboardOpen)
                 
                 defaultSize.height= this.innerHeight;
                 defaultSize.width= this.innerWidth;
