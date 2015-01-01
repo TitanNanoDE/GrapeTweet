@@ -421,6 +421,7 @@ $_('grapeTweet').main(function(){
 					$('dom').select('head meta[name="theme-color"]').setAttribute('content', '#29a1ed');
 					$('dom').select('.splash').transition('left').then(function(){
 						$('dom').select('.splash').classList.add('hidden');
+						$('dom').select('.client').classList.add('searchOpen');
 						$$.console.timeEnd('start');
 					});
 				});
