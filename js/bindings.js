@@ -93,6 +93,29 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
                 });
             }
         }, false);
+
+		$('dom').select('.page.chat .text-box .clip').addEventListener('click', function(){
+			(new $$.MozActivity({
+				name : 'pick',
+				data : {
+					type : 'image/*'
+				}
+			})).onsuccess= function(e){
+				var progressBar= $('dom').select('.progress.bar');
+				var progress= $('dom').select('.progress.bar .progress');
+				progress.style.setProperty('width', '0%');
+				progressBar.classList.add('show');
+				Net.uploadMedia(e.target.result.blob, true, function(e){
+					var percentComplete = Math.round((e.loaded / e.total) * 100);
+					$$.console.log('Uploading Media: '+percentComplete+'%');
+					progress.style.setProperty('width', percentComplete+'%');
+				}).then(function(){
+//					UI.renderChat(App.dataStatus.lastChat).then(function(){
+						progressBar.classList.remove('show');
+//					});
+				});
+			};
+		}, false);
         
 //		chat scrollTop
         $('dom').select('.page.chat .body').addEventListener('scroll', function(e){
@@ -127,7 +150,7 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
     
     var navigation= function(){
         //	top level navigation 
-        this.mount(['/', '/streams', '/messages', '/notifications', '/find', '/settings'], function(path){
+        this.mount(['/', '/streams', '/messages', '/notifications', '/people', '/settings'], function(path){
             var sheet= path.split('/')[1];
             sheet= (sheet === '') ? 'streams' : sheet;
     
