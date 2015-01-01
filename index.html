@@ -38,9 +38,12 @@
 					<ul class="message-list" data-user-id=""></ul>
 				</div>
 				<div class="text-box">
-					<div class="border"></div>
-					<div class="text" contenteditable></div>
-					<div class="send"></div>
+					<div class="progress bar"><div class="progress"></div></div>
+					<div class="container">
+						<div class="clip"></div>
+						<div class="send"></div>
+						<div class="text" contenteditable></div>
+					</div>
 				</div>
 			</div>
 			<div class="contacts page overlay right">
@@ -58,10 +61,19 @@
 			</div>
 		</div>
 		
-		<!-- find sheet -->
-		<div class="find sheet">
-			<header class="header"><div class="find title">Find</div></header>
+		<!-- people sheet -->
+		<div class="people sheet">
+			<header class="header"><div class="title">People</div></header>
 			<div class="body">
+				<div class="you">You <span class="displayname">User Name</span> <span class="username">@twiterusername</span></div>
+				<div>Important Friends</div>
+				<ul>
+					<li><span>Your Friend</span> <span>@yourFriendsUSerName</span></li>
+				</ul>
+				<di>Recent Profiles</di>
+				<ul>
+					<li><span>Last Visited Profil</span> <span>@theUserNameOfTHatGuy</span></li>
+				</ul>
 			</div>
 		</div>
 		
@@ -133,7 +145,7 @@
 			<a href="#!/streams" class="item streams">Tweets</a>
 			<a href="#!/messages" class="item messages">Messages<div class="count hidden"></div></a>
 			<a href="#!/notifications" class="item notifications">Notifications</a>
-			<a href="#!/find" class="item find">Find</a>
+			<a href="#!/people" class="item people">People</a>
 			<a href="#!/settings" class="item settings">Settings</a>
 		</footer>
 	</div>
