@@ -163,9 +163,10 @@ $_('grapeTweet').main(function(){
 	this.notify= function(conversationId){
 		Storage.getConversation(conversationId).then(function(conversation){
 			Storage.getMessage(conversation.lastMessage).then(function(message){
-                UI.renderChats();
+                UI.renderChats(conversationId);
 				
                 if(message.sender_id != App.account.userId){
+					$$.console.log('display Notification!!');
 					UI.renderFooterStatus(App.account);				
 					if($$.document.hidden || $$.location.hash.indexOf('/messages') < 0 || ($$.location.hash.indexOf('/chat') > -1 && App.dataStatus.lastChat != message.sender_id)){
 						var textBody= (conversation.unread < 2) ? Misc.cutdown(message.text) : conversation.unread + ' new messages';
@@ -255,7 +256,7 @@ $_('grapeTweet').main(function(){
                 message.last= null;
                 message.next= null;
 	   			
-                $$.Promise.all([ Storage.storeConversation(App.createConversation(convId, message.id_str, (message.sender_id != App.account.userId) ? 1 : 0)), App.storage.storeMessage(message) ]).then(callback);
+                $$.Promise.all([ Storage.storeConversation(App.createConversation(convId, message.id_str, (message.sender_id != App.account.userId) ? 1 : 0)), Storage.storeMessage(message) ]).then(callback);
             }
         }
     });
