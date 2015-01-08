@@ -43,11 +43,17 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
                     text= text.replace(item.url, '');
                     var img= $('dom').create('img');
 
-                    img.height= item.sizes.large.h / item.sizes.large.w * ($$.innerWidth - 34 - ($$.innerWidth / 100 * 25));
+                    img.style.height= item.sizes.large.h / item.sizes.large.w * ($$.innerWidth - 34 - ($$.innerWidth / 100 * 25))+'px';
                     target.appendChild(img);
                     Net.cacheImage(item.media_url).then(function(list){
                         img.src= list[0];
-                        if($$.MozActivity){
+
+						img.onload= function(){
+							var body= $('dom').select('.page.chat .body.c');
+							body.scrollTop= body.scrollHeight;
+						};
+
+						if($$.MozActivity){
                             img.addEventListener('click', function(){
                                 new $$.MozActivity({
                                     name : 'open',
@@ -243,7 +249,7 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 					var contact= values[1];
 					var list= $('dom').select('.message-list');
 					var userImage= $('dom').select('.page.chat .header-user-image');
-					var body= $('dom').select('.page.chat .body');
+					var body= $('dom').select('.page.chat .body.c');
 
 //					close notification for this conversation
 					$$.Notification.get().then(function(list){
@@ -280,15 +286,20 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
                                 Storage.storeConversation(conversation);
 
                                 interface.renderFooterStatus(App.account);
-                                body.scrollTop= body.scrollHeight;
                             }
-                            done();
+							done();
                         };
 
 						if(differentConv){
-				            Storage.getMessagesChunkBefore(conversation.lastMessage, true).then(handle);
+				            Storage.getMessagesChunkBefore(conversation.lastMessage, true).then(handle).then(function(){
+								body.scrollTop= body.scrollHeight;
+							});
 						}else{
-							Storage.getNewMessagesSince(conversation.lastReadMessage).then(handle);
+							Storage.getNewMessagesSince(conversation.lastReadMessage).then(handle).then(function(){
+								if(body.scrollTop == (body.scrollHeight - body.offsetHeight)){
+									body.scrollTop= body.scrollHeight;
+								}
+							});
 						}
 					}else done();
 				});
