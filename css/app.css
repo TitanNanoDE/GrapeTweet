@@ -38,7 +38,8 @@ ul{
 	left: 0;
 	top: 0;
 	overflow: hidden;
-	transition: transform ease-in-out 0.5s
+	transition: transform ease-in-out 0.5s;
+	will-change: transform;
 }
 
 .splash{
