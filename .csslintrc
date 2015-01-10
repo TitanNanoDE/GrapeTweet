@@ -2,5 +2,6 @@
     "adjoining-classes" : false,
     "box-sizing" : false,
 	"fallback-colors" : false,
-	"order-alphabetical" : false
+	"order-alphabetical" : false,
+	"outline-none" : false
 }

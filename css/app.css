@@ -18,6 +18,10 @@ ul{
 	list-style: none;
 }
 
+a:focus, input:focus, div:focus{
+	outline: none;
+}
+
 .table{
 	display: table;
 	width: 100%;
@@ -171,6 +175,7 @@ ul{
 	width: 100%;
 	overflow: hidden;
 	display: none;
+	z-index: 3;
 	transition: transform ease-in-out 0.5s;
 }
 
@@ -204,6 +209,7 @@ ul{
 	top: 0;
 	height: 100%;
 	width: 100%;
+	z-index: 2;
 	transition: transform ease-in-out 0.5s;
 }
 
@@ -342,7 +348,7 @@ ul{
 	height: 6.6vh;
 	background-color: rgb(227, 227, 227);
 	bottom: 0;
-	z-index: 2;
+	z-index: 4;
 }
 
 .client.footer-closed .footer{
