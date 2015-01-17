@@ -27,13 +27,13 @@
 		<!-- messages sheet -->
 		<div class="messages sheet">
 			<div class="conversations page">
-				<header class="header"><div class="messages title">Messages</div><a href="#!/profile" class="item profile"></a><a href="#!/messages/contacts" class="item new-conv"></a></header>
+				<header class="header"><div class="messages title">Messages</div><a href="#!/people/profile" class="item profile"></a><a href="#!/messages/contacts" class="item new-conv"></a></header>
 				<div class="body">
 					<ul class="conv-list"></ul>
 				</div>
 			</div>
 			<div class="page chat right">
-				<header class="header"><a href="#!/messages" class="back-title"></a><a href="#!/profile/" class="header-user-image"></a></header>
+				<header class="header"><a href="#!/messages" class="back-title"></a><a href="#!/people/profile/" class="header-user-image"></a></header>
 				<div class="c body">
 					<ul class="message-list" data-user-id=""></ul>
 				</div>
@@ -63,19 +63,52 @@
 		
 		<!-- people sheet -->
 		<div class="people sheet">
-			<header class="header"><div class="title">People</div></header>
-			<div class="body">
-				<div class="you">You <span class="displayname">User Name</span> <span class="username">@twiterusername</span></div>
-				<div>Important Friends</div>
-				<ul>
-					<li><span>Your Friend</span> <span>@yourFriendsUSerName</span></li>
-				</ul>
-				<di>Recent Profiles</di>
-				<ul>
-					<li><span>Last Visited Profil</span> <span>@theUserNameOfTHatGuy</span></li>
-				</ul>
-			</div>
-		</div>
+            <div class="page main">
+                <header class="header"><div class="title">People</div></header>
+                <div class="body">
+                    <div class="you">You <span class="displayname">User Name</span> <span class="username">@twiterusername</span></div>
+				    <div>Important Friends</div>
+				    <ul>
+					   <li><span>Your Friend</span> <span>@yourFriendsUSerName</span></li>
+                    </ul>
+				    <di>Recent Profiles</di>
+				    <ul>
+                        <li><span>Last Visited Profil</span> <span>@theUserNameOfTHatGuy</span></li>
+				    </ul>
+                </div>
+            </div>
+
+            <div class="page profile right">
+                <header class="header"><div class="profile title">Profile</div></header>
+                <div class="body">
+                    <div class="profile-header">
+                        <div class="page">
+                            <div class="user-image"></div>
+                            <div class="displayname">User</div>
+                            <div>@<span class="username">username</span></div>
+                            <div><span class="page-dot active"></span><span class="page-dot"></span></div>
+                        </div>
+                        <div class="page right"></div>
+				    </div>
+                    <div class="profile-info">
+                        <table>
+                            <tr>
+                                <td class="first"><span class="tweets">2,000</span><br>Tweets</td>
+                                <td class="second"><span class="following">100</span><br>Following</td>
+                                <td><span class="follower">5,000</span><br>Follower</td>
+                            </tr>
+                        </table>
+                        <div class="buttons">
+                            <button class="follow"></button><button>more</button>
+                        </div>
+                    </div>
+                    <div class="private-imgaes"></div>
+                    <div class="public-images"></div>
+                    <div class="lastest-tweets"></div>
+                    <div class="action-list"></div>
+                </div>
+            </div>
+        </div>
 		
 		<!-- settings sheet -->
 		<div class="settings sheet">
@@ -109,38 +142,7 @@
 				</div>
 			</div>
 		</div>
-		
-		<!-- profile sheet -->
-		<div class="profile sheet visible bottom">
-			<header class="header"><div class="profile title">Profile</div></header>
-			<div class="body">
-				<div class="profile-header">
-					<div class="page">
-						<div class="user-image"></div>
-						<div class="displayname">User</div>
-						<div>@<span class="username">username</span></div>
-						<div><span class="page-dot active"></span><span class="page-dot"></span></div>
-					</div>
-					<div class="page right"></div>
-				</div>
-				<div class="profile-info">
-					<table>
-					<tr>
-						<td class="first"><span class="tweets">2,000</span><br>Tweets</td>
-						<td class="second"><span class="following">100</span><br>Following</td>
-						<td><span class="follower">5,000</span><br>Follower</td>
-					</tr>
-					</table>
-					<div class="buttons">
-						<button class="follow"></button><button>more</button>
-					</div>
-				</div>
-				<div class="private-imgaes"></div>
-				<div class="public-images"></div>
-				<div class="lastest-tweets"></div>
-				<div class="action-list"></div>
-			</div>
-		</div>
+
 		<footer class="footer">
 			<a href="#!/streams" class="item streams">Tweets</a>
 			<a href="#!/messages" class="item messages">Messages<div class="count hidden"></div></a>
@@ -208,7 +210,7 @@
 	
 	<template id="timeline-layout">
 		<div class="page" data-id="">
-            <header class="header"><div class="title"></div><a href="#!/profile"><div class="item profile"></div></a></header>
+            <header class="header"><div class="title"></div><a href="#!/people/profile"><div class="item profile"></div></a></header>
 			<div class="body">
                 <div class="check-new loader closed">release to check for new Tweets</div>
 				<ul class="tweet-list"></ul>
