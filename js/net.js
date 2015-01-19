@@ -443,7 +443,11 @@ $_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
                     error();
                 });
 			});
-		}
+		},
+
+        pullPushMessages : function(){
+            return $$.Promise.all([App.pushServerSocket.request('/pull', $$.JSON.stringify({ id : App.pushServer.id })), Storage.getConversationsList()]);
+        }
 	};
 
     done(interface);

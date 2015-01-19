@@ -151,6 +151,39 @@ $_('grapeTweet').main(function(){
             $$.console.log('push server already registered!');
         }
     };
+
+    this.pullPushMessages= function(){
+        Net.pullPushMessages().then(function(values){
+            var data= $$.JSON.parse(values[0]);
+            var conversations= values[1];
+
+            if(data.status > 0){
+                data.messages.forEach(function(item){
+                    if(item.type == 'direct_message'){
+                        var convId= (item.sender_id == App.account.userId) ? item.recipient_id : item.sender_id;
+
+                        App.integrateIntoMessagesChain(item, conversations[convId]).then(function(){
+                            App.notify(convId);
+
+                            var chatPage= $('dom').select('.message-list');
+                            if(!$$.document.hidden && $$.location.hash.indexOf('/chat') > -1)
+                                UI.renderChat(chatPage.dataset.userId);
+                        });
+                    }else if(item.type == 'server_crash'){
+                        App.pushServerSocket.request('/reverify', $$.JSON.stringify({
+                            id : App.pushServer.id,
+                            x1 : App.twitterSocket.exposeToken()[0],
+                            x2 : App.twitterSocket.exposeToken()[1]
+                        })).then();
+                    }
+                });
+            }else{
+                $$.console.error(data);
+            }
+        }, function(){
+            App.pullPushMessages();
+        });
+    };
 	
 	this.openChat= function(e){
 		var id = ((e.target) ? e.target.dataset.userId : e);
