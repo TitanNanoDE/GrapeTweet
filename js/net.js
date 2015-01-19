@@ -1,28 +1,28 @@
 $_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
 
-	var AsyncLoop= $('classes').AsyncLoop;
+    var AsyncLoop= $('classes').AsyncLoop;
 
     var { Misc, Storage } = App.modules;
 
-	var interface= {
+    var interface= {
 
 //		download existing direct messages
-		downloadDirectMessages : function(){
-			return new $$.Promise(function(done){
-				var max_id_in= 0;
-				var max_id_out= 0;
-				var conversations= {};
+        downloadDirectMessages : function(){
+            return new $$.Promise(function(done){
+                var max_id_in= 0;
+                var max_id_out= 0;
+                var conversations= {};
 
-				var loopIn= new AsyncLoop(function(next, exit){
-					var request= null;
+                var loopIn= new AsyncLoop(function(next, exit){
+                    var request= null;
 
-					if(max_id_in === 0)
-						request= App.twitterSocket.get('/1.1/direct_messages.json', { count : 200 });
-					else
-						request= App.twitterSocket.get('/1.1/direct_messages.json', { max_id : max_id_in, count : 200 });
+                if(max_id_in === 0)
+                    request= App.twitterSocket.get('/1.1/direct_messages.json', { count : 200 });
+                else
+                    request= App.twitterSocket.get('/1.1/direct_messages.json', { max_id : max_id_in, count : 200 });
 
-					request.then(function(data){
-						data= $$.JSON.parse(data);
+                    request.then(function(data){
+                        data= $$.JSON.parse(data);
 
 						if(max_id_in !== 0)
 							data.shift();
@@ -32,7 +32,6 @@ $_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
 
 						data.forEach(function(item){
 							delete item.recipient;
-							delete item.sender;
 
 							if(App.dataStatus.lastDM_in === ''){
 								App.dataStatus.lastDM_in= item.id_str;
@@ -69,7 +68,6 @@ $_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
 							return exit();
 
 						data.forEach(function(item){
-							delete item.recipient;
 							delete item.sender;
 
 							if(App.dataStatus.lastDM_out === ''){
@@ -108,6 +106,8 @@ $_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
 //		fetch the new direct messages
 		fetchNewMessages : function(){
 			return new Promise(function(){
+				var messagesIn= [];
+				var messagesOut= [];
 
 				var loopIn= new AsyncLoop(function(next, exit){
 					var request= App.twitterSocket.get('/1.1/direct_messages.json', { since_id : App.dataStatus.lastDM_in, count : 200 });
@@ -118,17 +118,9 @@ $_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
 						if(data.length === 0)
 							return exit();
 
-						data.forEach(function(item, index){
+						data.forEach(function(item){
 							delete item.recipient;
-							delete item.sender;
-
-							if(index === 0){
-								App.dataStatus.lastDM_in= item.id_str;
-							}
-
-							Storage.storeMessage(item).catch(function(e){
-								$$.console.log(e);
-							});
+							messagesIn.push(item);
 						});
 
 						next();
@@ -146,18 +138,9 @@ $_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
 						if(data.length === 0)
 							return exit();
 
-						data.forEach(function(item, index){
-							delete item.recipient;
+						data.forEach(function(item){
 							delete item.sender;
-
-							if(index === 0){
-								App.dataStatus.lastDM_out= item.id_str;
-							}
-							var convId= (item.sender_id != App.account.userId) ? item.sender_id : item.recipient_id;
-
-				            Storage.getConversation(convId).then(function(conversation){
-								App.integrateIntoMessagesChain(item, conversation);
-							});
+							messagesOut.push(item);
 						});
 
 						next();
@@ -166,7 +149,22 @@ $_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
 					request.catch(exit);
 				});
 
-				$$.Promise.all([loopIn.incalculable(), loopOut.incalculable()]).then(done);
+				$$.Promise.all([loopIn.incalculable(), loopOut.incalculable()]).then(function(){
+					var queue= [];
+					messagesIn.sort(Misc.sortByDate);
+					messagesOut.sort(Misc.sortByDate);
+					App.dataStatus.lastDM_in= messagesIn.last().id_str;
+					App.dataStatus.lastDM_out= messagesOut.last().id_str;
+
+					messagesIn.concat(messagesOut).sort(Misc.sortByDate).forEach(function(message){
+						var convId= (message.sender_id != App.account.userId ? message.sender_id : message.recipient_id);
+						Storage.getConversation(convId).then(function(conversation){
+							queue.push(App.integrateIntoMessagesChain(message, conversation));
+						});
+					});
+
+					$$.Promise.all(queue).then(done);
+				});
 			});
 		},
 

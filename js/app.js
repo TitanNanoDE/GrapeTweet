@@ -51,10 +51,8 @@ $_('grapeTweet').main(function(){
 		name : 'dataStatus',
 		lastDM_in : '',
 		lastDM_out : '',
+		lastDM_pull : 0,
 		lastChat : '',
-		lastTweets : {
-			timeline : 0
-		},
 	}, appStateHandler);
 	
 	this.syncStatus= new $$.Proxy({
