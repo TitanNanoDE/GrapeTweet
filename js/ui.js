@@ -10,6 +10,7 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 		var list= $('dom').select('.message-list');
 		var firstElement= $('dom').select('.page.chat .message-list li');
         var element= null;
+        contact= contact || (item.sender_id != App.account.userID ? item.sender : item.recipient);
 
 		if(!list.querySelector('li[data-id="'+ item.id_str +'"]')){
             if(item.sender_id == App.account.userId){
@@ -36,11 +37,16 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 	};
 
     var renderEntities= function(text, entities, target, tweet){
+
+		var textElement= $('dom').create('div');
+        textElement.innerHTML= text;
+		target.appendChild(textElement);
+
 //      add medias
         if(entities.media){
             entities.media.forEach(function(item){
                 if(item.type == 'photo'){
-                    text= text.replace(item.url, '');
+                    textElement.innerHTML= textElement.innerHTML.replace(item.url, '');
                     var img= $('dom').create('img');
 
                     img.style.height= item.sizes.large.h / item.sizes.large.w * ($$.innerWidth - 34 - ($$.innerWidth / 100 * 25))+'px';
@@ -79,16 +85,13 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
                     });
                 }
             });
-        }else if(entities.urls){
+		}
+
+        if(entities.urls){
             entities.urls.forEach(function(item){
-                text= text.replace(item.url, '<a href="'+ item.url +'" target="_blank">'+ item.display_url +'</a>');
+                textElement.innerHTML= textElement.innerHTML.replace(item.url, '<a href="'+ item.url +'" target="_blank">'+ item.display_url +'</a>');
             });
         }
-
-//	    set text
-        var element= $('dom').create('div');
-        element.innerHTML= text;
-        target.appendChild(element);
     };
 
 	var getTimeSince= function(timeSting){
@@ -118,6 +121,8 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 			var newSheet= $('dom').select(selector);
 
     		if(activeSheet && activeSheet != newSheet){
+				activeSheet.querySelector('.body').style.setProperty('will-change', 'opacity');
+				newSheet.querySelector('.body').style.setProperty('will-change', 'opacity');
 				client.transition('change').then(function(){
 					newSheet.classList.add('active');
 					activeSheet.classList.remove('active');
@@ -176,7 +181,7 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
                         promises.push(Storage.getMessage(conversations.lastMessage));
                         var conv= conversations;
                         conversations= {};
-                        conversations[conversations.id]= conv;
+                        conversations[chatId]= conv;
                     }else{
                         $$.Object.keys(conversations).forEach(function(key){
                             promises.push(Storage.getMessage(conversations[key].lastMessage));
@@ -205,7 +210,7 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 
 						$$.Object.keys(conversations).forEach(function(userId, index){
 							var latest= messages[index];
-							var user= contacts[userId];
+							var user= contacts[userId]  || (latest.sender_id != App.account.userID ? latest.sender : latest.recipient);
 							var conv= conversations[userId];
                             var old= null;
 
@@ -267,8 +272,7 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 						$('dom').select('.page.chat .back-title').textContent= contact.name;
 
 						userImage.style.setProperty('background-image', 'url('+ contact.profile_image_url +')');
-						userImage.href= '#!/profile/'+ contact.id;
-						App.dataStatus.lastChat= contact.id_str;
+						userImage.href= '#!/people/profile/'+ contact.id;
 						list.dataset.userId= contact.id;
 					}
 
@@ -295,10 +299,9 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 								body.scrollTop= body.scrollHeight;
 							});
 						}else{
+							var scroll= (body.scrollTop == (body.scrollHeight - body.offsetHeight));
 							Storage.getNewMessagesSince(conversation.lastReadMessage).then(handle).then(function(){
-								if(body.scrollTop == (body.scrollHeight - body.offsetHeight)){
-									body.scrollTop= body.scrollHeight;
-								}
+								if(scroll) body.scrollTop= body.scrollHeight;
 							});
 						}
 					}else done();
