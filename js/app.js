@@ -139,11 +139,13 @@ $_('grapeTweet').main(function(){
                 App.pushServerSocket.request('/updateEndpoint', $$.JSON.stringify({ id : App.pushServer.id, endpoint : endpoint })).then(function(data){
                     data= $$.JSON.parse(data);
 
-                    if(data.status != 'failed'){
+                    if(data.status > 0){
                         App.pushServer.apply({ endpoint : endpoint, lastRefresh : Date.now() });
                         $$.console.log('push-endpoint successfully updated!');
                     }else{
-                        $$.console.error('push-endpoint update failed!');
+                        $$.console.log('server doesn\'t know us :/');
+                        App.pushServer.ready= false;
+                        App.updatePushServer();
                     }
                 });
             });
