@@ -58,9 +58,9 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
         $('dom').select('.conv-list').addEventListener('click', App.openChat, false);
         $('dom').select('.contact-list').addEventListener('click', App.openChat, false);
         
-        $('dom').select('.conv-list').addEventListener('contextmenu', function(){
+        $('dom').select('.conv-list').addEventListener('contextmenu', function(e){
             $$.navigator.vibrate([150]);
-            $$.location.hash= '#!/profile';
+            $$.location.hash= '#!/people/profile';
         });
 /*        $('dom').select('.tweet-list').addEventListener('click', function(){
 			if(this.classList.contains('collapsed'))
@@ -176,7 +176,11 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
         }, true);
 	
         this.mount('/messages/chat', function(){
-            UI.pagesToLeft('messages', 'conversations', 'chat');
+            $$.console.time('renderChat');
+            UI.renderChat(App.dataStatus.lastChat).then(function(){
+                $$.console.timeEnd('renderChat');
+                UI.pagesToLeft('messages', 'conversations', 'chat');
+            });
         }, function(){
             UI.renderChats();
             UI.pagesFromLeft('messages', 'chat', 'conversations');
@@ -190,11 +194,11 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
         }, true);
 
 // 	    profile
-        this.mount('/profile', function(){
-            $('dom').select('.sheet.profile').classList.remove('bottom');
+        this.mount('/people/profile', function(){
+            UI.pagesToLeft('people', 'main', 'profile');
         }, function(){
-            $('dom').select('.sheet.profile').classList.add('bottom');
-        });  
+            UI.pagesFromLeft('people', 'profile', 'main');
+        }, true);
     };
     
     var messages= function(){

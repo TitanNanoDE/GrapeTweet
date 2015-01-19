@@ -186,11 +186,8 @@ $_('grapeTweet').main(function(){
     };
 	
 	this.openChat= function(e){
-		var id = ((e.target) ? e.target.dataset.userId : e);
-		
-		UI.renderChat(id).then(function(){
-			$$.location.hash= '#!/messages/chat';
-		});
+        App.dataStatus.lastChat= ((e.target) ? e.target.dataset.userId : e);
+        $$.location.hash= '#!/messages/chat';
 	};
 	
 	this.notify= function(conversationId){
@@ -436,29 +433,20 @@ $_('grapeTweet').main(function(){
 			]).then(function(){
 				$$.console.timeEnd('loadingData');
 				App.updatePushServer();
-				
-				$$.console.time('renderChat');
-				new Promise(function(done){
-					if($$.location.hash.indexOf('/chat') > -1)
-						UI.renderChat(App.dataStatus.lastChat).then(done);
-					else
-						done();
-				}).then(function(){
-					$$.console.timeEnd('renderChat');
-//					the app is ready, so we are ready to handle pushs
-					Bindings.ui();
-                	Bindings.systemMessages.apply($$);
 
-// 					everything is done we can open the UI.
-					$('dom').select('.splash .loading').classList.add('hidden');
-					$('dom').select('.client').classList.remove('right');
-					$('dom').select('head meta[name="theme-color"]').setAttribute('content', '#29a1ed');
-					$('dom').select('.splash').transition('left').then(function(){
-						$('dom').select('.splash').classList.add('hidden');
-						$('dom').select('.client').classList.add('searchOpen');
-						$$.console.timeEnd('start');
-					});
-				});
+//			    the app is ready, so we are ready to handle pushs
+                Bindings.ui();
+                Bindings.systemMessages.apply($$);
+
+// 			  	everything is done we can open the UI.
+                $('dom').select('.splash .loading').classList.add('hidden');
+                $('dom').select('.client').classList.remove('right');
+                $('dom').select('head meta[name="theme-color"]').setAttribute('content', '#29a1ed');
+                $('dom').select('.splash').transition('left').then(function(){
+                    $('dom').select('.splash').classList.add('hidden');
+                    $('dom').select('.client').classList.add('searchOpen');
+                    $$.console.timeEnd('start');
+                });
 			});
 		});
 	});
