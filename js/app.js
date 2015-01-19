@@ -6,7 +6,7 @@ $_('grapeTweet').main(function(){
     
     var { Net, Misc, Storage, UI, Audio, Bindings } = App.modules;
   
-  	this.twitterSocket= new OAuthClient('twitter', 'https://api.twitter.com', 'gC7HaQ7T4u8HYGgRIhiLz0xGs', 'vNOVVig70BQl0pXjzpaU7Mf88Jd6O2gzTQ6FavnGUTalGtnMM1', { mozSystem : true });
+  	this.twitterSocket= new OAuthClient('twitter', 'https://api.twitter.com', 'TLeiAYSBAbIKnSWZ9qIg72PLI', 'HTSLlTLxiC1fbLzkxa4D2YaYRxRA58Eor8zGFMQEpRPYou4g2V', { mozSystem : true });
 	this.pushServerSocket= new Socket(Socket.HTTP, 'http://grapetweet-titannano.rhcloud.com',  { mozSystem : true });
 	
 	$$.App= this;
