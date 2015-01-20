@@ -9,14 +9,14 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
             width : $$.innerWidth
         };
 
-		var keepKeyboardOpen= function(e){
-			e.preventDefault();
-			e.target.classList.add('active');
-		};
+        var keepKeyboardOpen= function(e){
+            e.preventDefault();
+            e.target.classList.add('active');
+        };
                 
-        //	listen for keyboard
+//	    listen for keyboard
         $$.addEventListener('resize', function(){
-			var chatbody= $('dom').select('.chat .body');
+            var chatbody= $('dom').select('.chat .body');
 
 //		    keyboard is open
             if(this.innerHeight < defaultSize.height && this.innerWidth == defaultSize.width){
@@ -25,9 +25,9 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
 			
 //		    	chat
                 $('dom').select('.client').classList.add('footer-closed');
-//				if(chatbody.scrollTop  == chatbody.scrollHeight - chatbody.offsetHeight){
-                	chatbody.scrollTop= chatbody.scrollTopMax;
-//				}
+//			   	if(chatbody.scrollTop  == chatbody.scrollHeight - chatbody.offsetHeight){
+                chatbody.scrollTop= chatbody.scrollTopMax;
+//			   	}
 
 //				$$.addEventListener('mousedown', keepKeyboardOpen, false);
 
@@ -38,7 +38,7 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
 			
 //		    	chat
                 $('dom').select('.client').classList.remove('footer-closed');
-				chatbody.scrollTop= chatbody.scrollTopMax;
+                chatbody.scrollTop= chatbody.scrollTopMax;
 
 //				$$.removeEventListener('mousedown', keepKeyboardOpen)
                 
@@ -48,13 +48,13 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
         }, false);
         
         $$.document.addEventListener('visibilitychange', function(){
-           if(!$$.document.hidden){
-               if($$.location.hash.indexOf('/chat') > -1)
-                   UI.renderChat($('dom').select('.message-list').dataset.userId);
-           } 
+            if(!$$.document.hidden){
+                if($$.location.hash.indexOf('/chat') > -1)
+                    UI.renderChat($('dom').select('.message-list').dataset.userId);
+            }
         });
 
-        //	mouse events for lists
+//	    mouse events for lists
         $('dom').select('.conv-list').addEventListener('click', App.openChat, false);
         $('dom').select('.contact-list').addEventListener('click', App.openChat, false);
         
@@ -65,7 +65,7 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
 /*        $('dom').select('.tweet-list').addEventListener('click', function(){
 			if(this.classList.contains('collapsed'))
 				this.classList.remove('collapsed');
-			else
+            else
 				this.classList.add('collapsed');
 		}, false);*/
         
@@ -80,7 +80,7 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
                 });
             }
         }, false);
-	
+
         $('dom').select('.page.chat .send').addEventListener('mousedown', function(e){
             e.preventDefault();
             e.target.classList.add('active');
@@ -98,28 +98,28 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
             }
         }, false);
 
-		$('dom').select('.page.chat .text-box .clip').addEventListener('click', function(){
-			(new $$.MozActivity({
-				name : 'pick',
-				data : {
-					type : 'image/*'
+        $('dom').select('.page.chat .text-box .clip').addEventListener('click', function(){
+            (new $$.MozActivity({
+                name : 'pick',
+                data : {
+                    type : 'image/*'
 				}
-			})).onsuccess= function(e){
-				var progressBar= $('dom').select('.progress.bar');
+            })).onsuccess= function(e){
+                var progressBar= $('dom').select('.progress.bar');
 				var progress= $('dom').select('.progress.bar .progress');
-				progress.style.setProperty('width', '0%');
-				progressBar.classList.add('show');
-				Net.uploadMedia(e.target.result.blob, true, function(e){
-					var percentComplete = Math.round((e.loaded / e.total) * 100);
-					$$.console.log('Uploading Media: '+percentComplete+'%');
-					progress.style.setProperty('width', percentComplete+'%');
-				}).then(function(){
+                progress.style.setProperty('width', '0%');
+                progressBar.classList.add('show');
+                Net.uploadMedia(e.target.result.blob, true, function(e){
+                    var percentComplete = Math.round((e.loaded / e.total) * 100);
+                    $$.console.log('Uploading Media: '+percentComplete+'%');
+                    progress.style.setProperty('width', percentComplete+'%');
+                }).then(function(){
 //					UI.renderChat(App.dataStatus.lastChat).then(function(){
-						progressBar.classList.remove('show');
-//					});
-				});
+                    progressBar.classList.remove('show');
+//			   		});
+                });
 			};
-		}, false);
+        }, false);
         
 //		chat scrollTop
         $('dom').select('.page.chat .body').addEventListener('scroll', function(e){
@@ -131,30 +131,30 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
             }
         }, false);
 
-		$('dom').selectAll('.header').forEach(UI.bindHeader);
+        $('dom').selectAll('.header').forEach(UI.bindHeader);
 
-		var data= [];
+        var data= [];
 
-		$('dom').select('.client').addEventListener('touchstart', function(e){
-			e.changedTouches.forEach(function(item){
-				if(!item.target.classList.contains('.header') || !item.target.classList.contains('.search')){
-					this.push(item.identifier);
-				}
-			}.bind(this));
-		}.bind(data));
-		$('dom').select('.client').addEventListener('touchend', function(e){
-			var finder= function(item){ return this[i] == item.identifier; };
-			for(var i= 0; i < this.length; i++){
-				if(!e.touches.find(finder)){
-					var client= $('dom').select('.client');
-					client.classList.remove('searchOpen');
-				}
-			}
-		}.bind(data));
+        $('dom').select('.client').addEventListener('touchstart', function(e){
+            e.changedTouches.forEach(function(item){
+                if(!item.target.classList.contains('.header') || !item.target.classList.contains('.search')){
+                    this.push(item.identifier);
+                }
+            }.bind(this));
+        }.bind(data));
+        $('dom').select('.client').addEventListener('touchend', function(e){
+            var finder= function(item){ return this[i] == item.identifier; };
+            for(var i= 0; i < this.length; i++){
+                if(!e.touches.find(finder)){
+                    var client= $('dom').select('.client');
+                    client.classList.remove('searchOpen');
+                }
+            }
+        }.bind(data));
     };
     
     var navigation= function(){
-        //	top level navigation 
+//	    top level navigation
         this.mount(['/', '/streams', '/messages', '/notifications', '/people', '/settings'], function(path){
             var sheet= path.split('/')[1];
             sheet= (sheet === '') ? 'streams' : sheet;

@@ -123,6 +123,8 @@ $_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
 							messagesIn.push(item);
 						});
 
+                        App.dataStatus.lastDM_in= messagesIn.last().id_str;
+
 						next();
 					});
 
@@ -143,6 +145,8 @@ $_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
 							messagesOut.push(item);
 						});
 
+                        App.dataStatus.lastDM_out= messagesOut.last().id_str;
+
 						next();
 					});
 
@@ -153,8 +157,6 @@ $_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
 					var queue= [];
 					messagesIn.sort(Misc.sortByDate);
 					messagesOut.sort(Misc.sortByDate);
-					App.dataStatus.lastDM_in= messagesIn.last().id_str;
-					App.dataStatus.lastDM_out= messagesOut.last().id_str;
 
 					messagesIn.concat(messagesOut).sort(Misc.sortByDate).forEach(function(message){
 						var convId= (message.sender_id != App.account.userId ? message.sender_id : message.recipient_id);

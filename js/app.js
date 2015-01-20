@@ -1,15 +1,15 @@
 $_('grapeTweet').main(function(){
   
- 	var App= this;
-	var OAuthClient= $('connections').classes.OAuthClient;
-	var Socket= $('connections').classes.Socket;
-    
+    var App= this;
+    var OAuthClient= $('connections').classes.OAuthClient;
+    var Socket= $('connections').classes.Socket;
+
     var { Net, Misc, Storage, UI, Audio, Bindings } = App.modules;
   
-  	this.twitterSocket= new OAuthClient('twitter', 'https://api.twitter.com', 'TLeiAYSBAbIKnSWZ9qIg72PLI', 'HTSLlTLxiC1fbLzkxa4D2YaYRxRA58Eor8zGFMQEpRPYou4g2V', { mozSystem : true });
-	this.pushServerSocket= new Socket(Socket.HTTP, 'http://grapetweet-titannano.rhcloud.com',  { mozSystem : true });
+    this.twitterSocket= new OAuthClient('twitter', 'https://api.twitter.com', 'TLeiAYSBAbIKnSWZ9qIg72PLI', 'HTSLlTLxiC1fbLzkxa4D2YaYRxRA58Eor8zGFMQEpRPYou4g2V', { mozSystem : true });
+    this.pushServerSocket= new Socket(Socket.HTTP, 'http://grapetweet-titannano.rhcloud.com',  { mozSystem : true });
 	
-	$$.App= this;
+    $$.App= this;
     
     var appStateHandler= {
         get : function(target, property){
@@ -33,71 +33,71 @@ $_('grapeTweet').main(function(){
         }
     };
     
-  	this.account= new $$.Proxy({
-		name : 'account',
-		unreadMessages : 0,
-		userId : 0
-	}, appStateHandler);
+    this.account= new $$.Proxy({
+        name : 'account',
+        unreadMessages : 0,
+        userId : 0
+    }, appStateHandler);
 	
-	this.pushServer= new $$.Proxy({
-		name : 'pushServer',
-		ready : false,
-		id : 0,
-		endpoint : '',
-		lastRefresh : 0
-	}, appStateHandler);
+    this.pushServer= new $$.Proxy({
+        name : 'pushServer',
+        ready : false,
+        id : 0,
+        endpoint : '',
+        lastRefresh : 0
+    }, appStateHandler);
 	
-	this.dataStatus= new $$.Proxy({
-		name : 'dataStatus',
-		lastDM_in : '',
-		lastDM_out : '',
-		lastDM_pull : 0,
-		lastChat : '',
-	}, appStateHandler);
+    this.dataStatus= new $$.Proxy({
+        name : 'dataStatus',
+        lastDM_in : '',
+        lastDM_out : '',
+        lastDM_pull : 0,
+        lastChat : '',
+    }, appStateHandler);
 	
-	this.syncStatus= new $$.Proxy({
-		name : 'syncStatus',
-		contacts : {
-			fetchingInfo : false,
-			nextFollowingCursor : '-1',
-			nextFollowerCursor : '-1',
-			nextContact : '',
-			lastSync : '',
-			followerCache : [],
-			followingCache : [],
-			contactsCache : []
-		}	
-	}, appStateHandler);
+    this.syncStatus= new $$.Proxy({
+        name : 'syncStatus',
+        contacts : {
+            fetchingInfo : false,
+            nextFollowingCursor : '-1',
+            nextFollowerCursor : '-1',
+            nextContact : '',
+            lastSync : '',
+            followerCache : [],
+            followingCache : [],
+            contactsCache : []
+        }
+    }, appStateHandler);
 
     this.loadingChunk= false;
 	
-	this.cache= {
-		images : {}
-	};
+    this.cache= {
+        images : {}
+    };
 	
-	this.jobs= [];
-	
-	var objectReplace= function(update){
-        var self= this;
-		$$.Object.keys(update).forEach(function(item){
-			if(typeof update[item] == 'object' && !$$.Array.isArray(update[item]) && update[item] !== null)
-				objectReplace.apply(self[item], [update[item]]);
-			else
-				self[item]= update[item];
-		});
-	};
+    this.jobs= [];
 
-	var notificationClick= function(e){
-		App.openChat(e.target.tag);
-		App.show();
-	};
+    var objectReplace= function(update){
+        var self= this;
+        $$.Object.keys(update).forEach(function(item){
+            if(typeof update[item] == 'object' && !$$.Array.isArray(update[item]) && update[item] !== null)
+                objectReplace.apply(self[item], [update[item]]);
+            else
+                self[item]= update[item];
+        });
+    };
+
+    var notificationClick= function(e){
+        App.openChat(e.target.tag);
+        App.show();
+    };
 
     var requestEndpoint= function(callback){
-        $$.navigator.push.registrations().onsuccess= function(){
+/*        $$.navigator.push.registrations().onsuccess= function(){
             this.result.forEach(function(item){
                 $$.navigator.push.unregister(item.pushEndpoint);
             });
-        };
+        };*/
 
         $$.console.log('requesting push-endpoint...');
         var endpointRequest= $$.navigator.push.register();
@@ -129,8 +129,8 @@ $_('grapeTweet').main(function(){
         });
     };
 	
-	this.updatePushServer= function(force){
-		if(!App.pushServer.ready){
+    this.updatePushServer= function(force){
+        if(!App.pushServer.ready){
             registerPushClient();
         }else if( (Date.now() - App.pushServer.lastRefresh) > 7200000 || force){
             requestEndpoint(function(endpoint){
@@ -180,8 +180,9 @@ $_('grapeTweet').main(function(){
             }else{
                 $$.console.error(data);
             }
-        }, function(){
-            App.pullPushMessages();
+        },function(e){
+            $$.console.error('Network error!');
+            $$.console.error(e);
         });
     };
 	
@@ -266,7 +267,7 @@ $_('grapeTweet').main(function(){
                 conversation.lastMessage= message.id_str;
                 if(message.sender_id != App.account.userId){
                     conversation.unread= (conversation.unread > 0) ? conversation.unread+1 : 1;
-                    App.account.unreadMessages+= 1;
+                    App.account.unreadMessages= (App.account.unreadMessages > 0) ? App.account.unreadMessages+1 : 1;
                 }
 				
                 $$.Promise.all([Storage.storeMessage(message), Storage.storeConversation(conversation)]).then(function(){
@@ -387,52 +388,52 @@ $_('grapeTweet').main(function(){
 			$$.Promise.all([
 				new Promise(function(done){
 					if(App.syncStatus.contacts.lastSync === ''){
-						Net.syncContacts().then(function(done){
-							UI.renderContacts().then();
-							done();
-						});
-					}else{
 						Net.syncContacts().then(function(){
-							UI.renderContacts().then();
-						});
-						done();
-					}
-				}),
+                            UI.renderContacts().then();
+                            done();
+                        });
+                    }else{
+                        Net.syncContacts().then(function(){
+                            UI.renderContacts().then();
+                        });
+                        done();
+                    }
+                }),
 
-				new Promise(function(done){
-					$$.console.time('--directMessages');
-					Storage.checkDirectMessages().then(function(directMessagesStored){
-						if(!directMessagesStored){
-							Net.downloadDirectMessages().then(done);
-						}else{
-							$$.console.timeEnd('--directMessages');
-							done();
-						}
-					});
-				}),
+                new Promise(function(done){
+                    $$.console.time('--directMessages');
+                    Storage.checkDirectMessages().then(function(directMessagesStored){
+                        if(!directMessagesStored){
+                            Net.downloadDirectMessages().then(done);
+                        }else{
+                            $$.console.timeEnd('--directMessages');
+                            done();
+                        }
+                    });
+                }),
 
-				new Promise(function(done){
-					$$.console.time('--timeline');
-					Storage.getTimeline('$home').then(function(timeline){
-						if(!timeline){
-							timeline= App.createTimeline('Home', '$home');
-							Net.fetchNewHomeTweets(timeline).then(function(){
-								UI.renderTimeline(timeline);
-								UI.renderTweets(timeline).then(done);
-							});
-						}else{
-							UI.renderTimeline(timeline);
-							UI.renderTweets(timeline).then(done).then(function(){
-								$$.console.timeEnd('--timeline');
-							});
-						}
-					});
-				}),
+                new Promise(function(done){
+                    $$.console.time('--timeline');
+                    Storage.getTimeline('$home').then(function(timeline){
+                        if(!timeline){
+                            timeline= App.createTimeline('Home', '$home');
+                            Net.fetchNewHomeTweets(timeline).then(function(){
+                                UI.renderTimeline(timeline);
+                                UI.renderTweets(timeline).then(done);
+                            });
+                        }else{
+                            UI.renderTimeline(timeline);
+                            UI.renderTweets(timeline).then(done).then(function(){
+                                $$.console.timeEnd('--timeline');
+                            });
+                        }
+                    });
+                }),
 
-				UI.renderChats()
-			]).then(function(){
-				$$.console.timeEnd('loadingData');
-				App.updatePushServer();
+                UI.renderChats()
+            ]).then(function(){
+                $$.console.timeEnd('loadingData');
+                App.updatePushServer();
 
 //			    the app is ready, so we are ready to handle pushs
                 Bindings.ui();
@@ -447,7 +448,7 @@ $_('grapeTweet').main(function(){
                     $('dom').select('.client').classList.add('searchOpen');
                     $$.console.timeEnd('start');
                 });
-			});
-		});
-	});
+            });
+        });
+    });
 });
