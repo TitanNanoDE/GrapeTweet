@@ -438,6 +438,10 @@ a:focus, input:focus, div:focus{
     margin-top: 0;
 }
 
+.tweet, .message{
+    word-wrap: break-word;
+}
+
 .tweet div, .conv div, .contact div{
 	pointer-events: none;
 }
