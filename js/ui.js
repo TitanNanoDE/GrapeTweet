@@ -210,7 +210,7 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 
                         $$.Object.keys(conversations).forEach(function(userId, index){
                             var latest= messages[index];
-                            var user= contacts[userId]  || (latest.sender_id != App.account.userID ? latest.sender : latest.recipient);
+                            var user= contacts[userId]  || (latest.sender_id_str != App.account.userId ? latest.sender : latest.recipient);
                             var conv= conversations[userId];
                             var old= null;
 
