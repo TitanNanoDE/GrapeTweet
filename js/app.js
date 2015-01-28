@@ -4,7 +4,7 @@ $_('grapeTweet').main(function(){
     var OAuthClient= $('connections').classes.OAuthClient;
     var Socket= $('connections').classes.Socket;
 
-    var { Net, Misc, Storage, UI, Audio, Bindings } = App.modules;
+    var { Net, Misc, Storage, UI, Audio, Bindings, Initializer } = App.modules;
   
     this.twitterSocket= new OAuthClient('twitter', 'https://api.twitter.com', 'TLeiAYSBAbIKnSWZ9qIg72PLI', 'HTSLlTLxiC1fbLzkxa4D2YaYRxRA58Eor8zGFMQEpRPYou4g2V', { mozSystem : true });
     this.pushServerSocket= new Socket(Socket.HTTP, 'http://grapetweet-titannano.rhcloud.com',  { mozSystem : true });
@@ -74,8 +74,6 @@ $_('grapeTweet').main(function(){
     this.cache= {
         images : {}
     };
-	
-    this.jobs= [];
 
     var objectReplace= function(update){
         var self= this;
@@ -343,12 +341,10 @@ $_('grapeTweet').main(function(){
         };
     };
   
-// 	check the current login  
-	$$.console.time('checkLogin');
-	$$.console.time('start');
-	(new $$.Promise(function(done){
+// 	check the current login
+	Initializer.job('login', function(done){
         var spinner= $('dom').select('.splash .loading');
-		if(!App.twitterSocket.isLoggedIn()){
+        if(!App.twitterSocket.isLoggedIn()){
             var button= $('dom').select('.splash .signIn');
 			App.twitterSocket.requestToken('/oauth/request_token', 'http://grape-tweet.com/callback').then(function(){
 				$('dom').select('.splash .signIn').classList.remove('hidden');
@@ -371,84 +367,77 @@ $_('grapeTweet').main(function(){
 			done();
 			spinner.classList.remove('hidden');
 		}
+    })
 
-//  check direct messages, timeline and contacts
-	})).then(function(){
-		$$.console.time('loadingData');
-		$$.console.time('applicationStates');
+    .job('applicationStates', function(done){
 		Storage.getApplicationStates().then(function(values){
-			values.forEach(function(item){
-				App[item.name].apply(item);
-			});
-			$$.console.timeEnd('applicationStates');
-
-			Bindings.navigation.apply($('hash'));
-			$('hash').restore();
-
-			$$.Promise.all([
-				new Promise(function(done){
-					if(App.syncStatus.contacts.lastSync === ''){
-						Net.syncContacts().then(function(){
-                            UI.renderContacts().then();
-                            done();
-                        });
-                    }else{
-                        Net.syncContacts().then(function(){
-                            UI.renderContacts().then();
-                        });
-                        done();
-                    }
-                }),
-
-                new Promise(function(done){
-                    $$.console.time('--directMessages');
-                    Storage.checkDirectMessages().then(function(directMessagesStored){
-                        if(!directMessagesStored){
-                            Net.downloadDirectMessages().then(done);
-                        }else{
-                            $$.console.timeEnd('--directMessages');
-                            done();
-                        }
-                    });
-                }),
-
-                new Promise(function(done){
-                    $$.console.time('--timeline');
-                    Storage.getTimeline('$home').then(function(timeline){
-                        if(!timeline){
-                            timeline= App.createTimeline('Home', '$home');
-                            Net.fetchNewHomeTweets(timeline).then(function(){
-                                UI.renderTimeline(timeline);
-                                UI.renderTweets(timeline).then(done);
-                            });
-                        }else{
-                            UI.renderTimeline(timeline);
-                            UI.renderTweets(timeline).then(done).then(function(){
-                                $$.console.timeEnd('--timeline');
-                            });
-                        }
-                    });
-                }),
-
-                UI.renderChats()
-            ]).then(function(){
-                $$.console.timeEnd('loadingData');
-                App.updatePushServer();
-
-//			    the app is ready, so we are ready to handle pushs
-                Bindings.ui();
-                Bindings.systemMessages.apply($$);
-
-// 			  	everything is done we can open the UI.
-                $('dom').select('.splash .loading').classList.add('hidden');
-                $('dom').select('.client').classList.remove('right');
-                $('dom').select('head meta[name="theme-color"]').setAttribute('content', '#29a1ed');
-                $('dom').select('.splash').transition('left').then(function(){
-                    $('dom').select('.splash').classList.add('hidden');
-                    $('dom').select('.client').classList.add('searchOpen');
-                    $$.console.timeEnd('start');
-                });
+            values.forEach(function(item){
+                App[item.name].apply(item);
             });
+        }).then(done);
+    }).depends('login')
+
+    .job('contacts', function(done){
+        if(App.syncStatus.contacts.lastSync === ''){
+            Net.syncContacts().then(function(){
+                UI.renderContacts().then();
+                done();
+            });
+        }else{
+            Net.syncContacts().then(function(){
+                UI.renderContacts().then();
+            });
+            done();
+        }
+    }).depends('applicationStates')
+
+    .job('directMessages', function(done){
+        Storage.checkDirectMessages().then(function(directMessagesStored){
+            if(!directMessagesStored){
+                Net.downloadDirectMessages().then(done);
+            }else{
+                done();
+            }
+        });
+    }).depends('applicationStates')
+
+    .job('timeline', function(done){
+        Storage.getTimeline('$home').then(function(timeline){
+            if(!timeline){
+                timeline= App.createTimeline('Home', '$home');
+                Net.fetchNewHomeTweets(timeline).then(function(){
+                    UI.renderTimeline(timeline);
+                    UI.renderTweets(timeline).then(done);
+                });
+            }else{
+                UI.renderTimeline(timeline);
+                UI.renderTweets(timeline).then(done);
+            }
+        });
+    }).depends('applicationStates')
+
+    .job('renderChats', function(done){
+        UI.renderChats().then(done);
+    }).depends('applicationStates')
+
+    .job('bindings', function(done){
+        App.updatePushServer();
+        Bindings.ui();
+        Bindings.systemMessages.apply($$);
+        Bindings.navigation.apply($('hash'));
+        $('hash').restore();
+        done();
+    }).depends('applicationStates')
+
+    .init().then(function(){
+// 	    everything is done we can open the UI.
+        $('dom').select('.splash .loading').classList.add('hidden');
+        $('dom').select('.client').classList.remove('right');
+        $('dom').select('head meta[name="theme-color"]').setAttribute('content', '#29a1ed');
+        $('dom').select('.splash').transition('left').then(function(){
+            $('dom').select('.splash').classList.add('hidden');
+            $('dom').select('.client').classList.add('searchOpen');
+            $$.console.timeEnd('start');
         });
     });
 });
