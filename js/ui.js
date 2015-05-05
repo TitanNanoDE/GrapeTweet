@@ -1,8 +1,8 @@
-$_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
+$_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net', 'Cache'], function(App, done){
 
     var client= $('dom').select('.client.twitter');
 
-    var { Storage, Misc, Net } = App.modules;
+    var { Storage, Misc, Net, Cache } = App.modules;
 
     var renderMessage= function(item, contact, insertBefore){
         var template_default= $('dom').select('#chat-message-layout').content;
@@ -24,6 +24,7 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 
 //	 	    format text
             renderEntities(item.text, item.entities, element.querySelector('.text'));
+            Storage.storeMessage(item);
 
 //		    timestamp
             var date= new Date(item.created_at);
@@ -44,45 +45,70 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
 
 //      add medias
         if(entities.media){
+            var downloadImage= function(item){
+                var img= this;
+                img.src= '../img/downloading-thumb.png';
+                img.dataset.status= item.status || '';
+                if(img.dataset.status === ''){
+                    Net.downloadImage(item.media_url).then(function(data){
+                        img.src= data.url;
+                        img.dataset.status= item.status= 'downloaded';
+
+                        if(!tweet){
+                            Cache.save(item.media_url, data.blob, true);
+                        }else{
+                            Cache.save(item.media_url, data.blob, false);
+                        }
+                        addImageListeners(img, img, data.blob, data.url);
+                    });
+                }
+                img.dataset.status= 'downloading';
+            };
+            var addImageListeners= function(item, img, blob, url){
+                if($$.MozActivity){
+                    img.addEventListener('click', function(){
+                        new $$.MozActivity({
+                            name : 'open',
+                            data : {
+                                type : blob.type,
+                                blob : blob
+                            }
+                        });
+                    });
+                }
+                if(tweet){
+                    img.addEventListener('contextmenu', function(e){
+                        e.preventDefault();
+                        var link= $('dom').create('a');
+                        link.href= url;
+                        link.download= item.media_url.substr(item.media_url.lastIndexOf('/'));
+                        $$.document.body.appendChild(link);
+                        link.click();
+                        $$.document.body.removeChild(link);
+                    });
+                }
+            };
+
             entities.media.forEach(function(item){
                 if(item.type == 'photo'){
                     textElement.innerHTML= textElement.innerHTML.replace(item.url, '');
                     var img= $('dom').create('img');
 
-                    img.style.height= item.sizes.large.h / item.sizes.large.w * ($$.innerWidth - 34 - ($$.innerWidth / 100 * 25))+'px';
+                    img.style.height= target.style.minHeight= item.sizes.large.h / item.sizes.large.w * ($$.innerWidth - 34 - ($$.innerWidth / 100 * 25))+'px';
+                    if(item.status == 'downloaded'){
+                        Cache.recover(item.media_url).then(function(blob){
+                            var url= $$.URL.createObjectURL(blob);
+                            img.src= url;
+                            addImageListeners(item, img, blob, url);
+                        });
+                    }
+                    if(!tweet){
+                        img.src= "../img/image-thumb.png";
+                        img.addEventListener('click', downloadImage.bind(img, [item]));
+                    }else{
+                        downloadImage.apply(img, [item]);
+                    }
                     target.appendChild(img);
-                    Net.cacheImage(item.media_url).then(function(list){
-                        img.src= list[0];
-
-                        img.onload= function(){
-                            var body= $('dom').select('.page.chat .body.c');
-                            body.scrollTop= body.scrollHeight;
-                        };
-
-                        if($$.MozActivity){
-                            img.addEventListener('click', function(){
-                                new $$.MozActivity({
-                                    name : 'open',
-                                    data : {
-                                        type : list[1].type,
-                                        blob : list[1]
-                                    }
-                                });
-                            });
-                        }
-
-                        if(tweet){
-                            img.addEventListener('contextmenu', function(e){
-                                e.preventDefault();
-                                var link= $('dom').create('a');
-                                link.href= list[0];
-                                link.download= item.media_url.substr(item.media_url.lastIndexOf('/'));
-                                $$.document.body.appendChild(link);
-                                link.click();
-                                $$.document.body.removeChild(link);
-                            });
-                        }
-                    });
                 }
             });
         }
@@ -358,6 +384,7 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
                     element.querySelector('.user-image').style.setProperty('background-image', 'url('+ tweet.user.profile_image_url +')');
                     element.querySelector('.datetime').textContent= getTimeSince(tweet.created_at);
                     renderEntities(tweet.text, tweet.entities, element.querySelector('.text'), true);
+                    Storage.storeTweet(tweet, timeline);
 
                     list.appendChild(element);
                 });
@@ -503,6 +530,16 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net'], function(App, done){
                 $$.addEventListener('touchmove', tracker);
                 $$.addEventListener('touchend', release);
             });
+        },
+
+        findElement : function(element, selector){
+            var target= null;
+            while(!target){
+                target= element.querySelector(selector);
+                element= element.parentNode;
+                if(!element) break;
+            }
+            return target;
         }
     };
 

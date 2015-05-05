@@ -1,3 +1,7 @@
+html{
+    font-size: 68%;
+}
+
 body {
 	margin: 0;
 	padding: 0;
@@ -49,7 +53,7 @@ a:focus, input:focus, div:focus{
 .splash{
 	box-sizing: border-box;
 	padding: 10vh 10vw;
-	background-color: #2b6fcb;
+	background-color: #1976d2;
 	overflow: auto;
 	height: 100vh;
 }
@@ -143,8 +147,8 @@ a:focus, input:focus, div:focus{
 }
 
 .search{
-	background: #2490D5;
-	height: 3rem;
+	background: #1A86DD;
+	height: 4.5rem;
 	padding: 0.5rem;
 	box-sizing: border-box;
 }
@@ -171,7 +175,7 @@ a:focus, input:focus, div:focus{
 	position: absolute;
 	left: 0;
 	top: 0;
-	height: calc(100% - 6.6vh);
+	height: calc(100% - 4.5rem);
 	width: 100%;
 	overflow: hidden;
 	display: none;
@@ -184,7 +188,7 @@ a:focus, input:focus, div:focus{
 }
 
 .client.searchOpen{
-	transform: translateY(3rem);
+	transform: translateY(4.5rem);
 }
 
 .sheet.left{
@@ -223,7 +227,6 @@ a:focus, input:focus, div:focus{
 
 .sheet .page.overlay{
 	transition: transform ease-in-out 0.4s;
-	box-shadow: 0 -3px 3px #000;
 }
 
 .sheet .page.overlay.right{
@@ -232,9 +235,9 @@ a:focus, input:focus, div:focus{
 
 .header{
 	width: 100%;
-	height: 50px;
+	height: 5rem;
 	color: #fff;
-	background-color: #29a1ed;
+	background-color: #2196f3;
 	background-position: 5px center;
 	background-repeat: no-repeat;
 	position: relative;
@@ -251,10 +254,10 @@ a:focus, input:focus, div:focus{
 }
 
 .header .title, .header .back-title{
-	font-size: 20px;
+	font-size: 2.5rem;
 	font-weight: 500;
-	line-height: 20px;
-	padding: 15px 10px 15px 45px;
+	line-height: 2.5rem;
+	padding: 1.25rem 10px 1.25rem 45px;
 	float: left;
 	background-position: 5px center;
 	background-size: 35px;
@@ -269,9 +272,9 @@ a:focus, input:focus, div:focus{
 
 .header .item{
 	float: right;
-	width: 50px;
-	height: 50px;
-	background-size: 30px;
+	width: 5rem;
+	height: 5rem;
+	background-size: 3rem;
 	background-position: center;
 	background-repeat: no-repeat;
 	text-decoration: none;
@@ -283,10 +286,10 @@ a:focus, input:focus, div:focus{
 
 .header .header-user-image{
 	position: absolute;
-	height: 60px;
-	width: 60px;
+	height: 5.2rem;
+	width: 5.2rem;
 	top: 0;
-	right: 10px;
+	right: 1rem;
 	background-color: #000;
 	background-size: contain;
 }
@@ -325,11 +328,11 @@ a:focus, input:focus, div:focus{
 
 .body{
 	position:absolute;
-	top: 50px;
+	top: 5rem;
 	bottom: 0;
 	opacity: 1;
 	transition: opacity 0.3s;
-	background: #fff;
+	background-color: #eeeeee;
 	overflow-y: auto;
 	width: 100%;
 	box-sizing: border-box;
@@ -345,8 +348,8 @@ a:focus, input:focus, div:focus{
 
 .footer{
 	position: absolute;
-	height: 6.6vh;
-	background-color: rgb(227, 227, 227);
+	height: 4.5rem;
+	background-color: #bdbdbd;
 	bottom: 0;
 	z-index: 4;
 }
@@ -360,31 +363,32 @@ a:focus, input:focus, div:focus{
 }
 
 .footer .item{
-	background-size: 26px;
+	background-size: 3.2rem;
 	background-position: center 2px;
 	background-repeat: no-repeat;
 	background-color: transparent;
 	border: medium none;
 	border-radius: 0;
-	font-size: 10px;
-	line-height: 13px;
-	padding-top: 26px;
-	text-align: center;
+    font-size: .9rem;
+    line-height: 1rem;
+    padding-top: 3.2rem;
+    text-align: center;
 	color: #5D5D5D;
 	text-decoration: none;
 	float: left;
 	width: 20vw;
 	box-sizing: content-box;
 	position: relative;
+    height: 100%;
 }
 
 .footer .item:active, .footer .item.active{
-	background-color: #D1D1D1;
+	background-color: #e0e0e0;
 }
 
 .footer .item .count{
 	position: absolute;
-	background-color: #24A2F2;
+	background-color: #2962ff;
 	right: 13px;
 	top: 3px;
 	text-align: center;
@@ -421,11 +425,12 @@ a:focus, input:focus, div:focus{
 }
 
 .loader{
-    border-bottom: 3px solid #D8D8D8;
     text-align: center;
     vertical-align: middle;
     padding: 30px 0;
     line-height: 15px;
+    background-color: #fff;
+    margin: 0 1.5rem;
     margin-top: -78px;
 }
 
@@ -455,6 +460,7 @@ a:focus, input:focus, div:focus{
 	border-bottom: 1px solid rgb(225, 225, 225); 
 	padding: 3vh 2.5vw;
 	box-sizing: border-box;
+    background: #fff;
 }
 
 .tweet:active, .conv:active, .contact:active{
@@ -462,10 +468,10 @@ a:focus, input:focus, div:focus{
 }
 
 .user-image-container{
-	vertical-align: top;
 	padding: 0 6px 0 0;
 	width: 15vw;
 	box-sizing: content-box;
+    float: left;
 }
 
 .user-image{
@@ -503,6 +509,7 @@ a:focus, input:focus, div:focus{
 
 .tweet-header .datetime, .conv-header .datetime{
 	text-align: right;
+    float: right;
 }
 
 .tweet-body .text, .conv-body .text{
@@ -524,8 +531,8 @@ a:focus, input:focus, div:focus{
 	transition: padding linear 0.2s, min-height linear 0.2s;
 }
 
-.tweet:not(.collapsed) .tweet-footer{
-	min-height: 10px;
+.tweet:not(.merged) .tweet-footer{
+	min-height: 2rem;
 	padding: 10px 0;
 }
 
@@ -553,8 +560,13 @@ a:focus, input:focus, div:focus{
 	max-width: calc(100% - 25vw);
 }
 
-.chat .message img{
+.chat .message.image{
 	width: 100%;
+    box-sizing: content-box;
+}
+
+.chat .message img{
+    width: 100%;
 	margin-bottom: 5px;
 }
 

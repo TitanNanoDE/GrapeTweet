@@ -4,8 +4,9 @@
 	<title>Privileged app</title>
 	<meta name="description" content="A privileged app stub">
 	<meta name="viewport" content="width=device-width">
-	<meta name="theme-color" content="#2b6fcb">
-	<link rel="stylesheet" href="css/app.css">
+	<meta name="theme-color" content="#1976d2">
+	<link rel="stylesheet" type="text/css" href="css/material.css">
+	<link rel="stylesheet" type="text/css" href="css/app.css">
 </head>
 <body>
     <div class="splash">
@@ -27,14 +28,14 @@
         <!-- messages sheet -->
         <div class="messages sheet">
             <div class="conversations page">
-                <header class="header"><div class="messages title">Messages</div><a href="#!/people/profile" class="item profile"></a><a href="#!/messages/contacts" class="item new-conv"></a></header>
+                <header class="header material"><div class="messages title">Messages</div><a href="#!/people/profile" class="item profile"></a><a href="#!/messages/contacts" class="item new-conv"></a></header>
                 <div class="body">
                     <ul class="conv-list"></ul>
                 </div>
             </div>
             <div class="page chat right">
-                <header class="header"><a href="#!/messages" class="back-title"></a><a href="#!/people/profile/" class="header-user-image"></a></header>
-                <div class="c body">
+                <header class="header material"><a href="#!/messages" class="back-title"></a><a href="#!/people/profile/" class="header-user-image"></a></header>
+                <div class="c body waterfall">
                     <ul class="message-list" data-user-id=""></ul>
                 </div>
                 <div class="text-box">
@@ -46,23 +47,23 @@
                     </div>
                 </div>
             </div>
-            <div class="contacts page overlay right">
-                <header class="header"><a href="#!/messages" class="back-title">Contacts</a></header>
-                <div class="body">
+            <div class="contacts page overlay right material l1">
+                <header class="header material"><a href="#!/messages" class="back-title">Contacts</a></header>
+                <div class="body waterfall">
                     <ul class="contact-list"></ul>
                 </div>
             </div>
         </div>
 		
         <!-- notifications sheet -->
-        <div class="notifications sheet">
+        <div class="notifications sheet material">
             <header class="header"><div class="notifications title">Notifications</div><a href="#!/profile" class="item profile"></a></header>
             <div class="body">
             </div>
         </div>
 
         <!-- people sheet -->
-        <div class="people sheet">
+        <div class="people sheet material">
             <div class="page main">
                 <header class="header"><div class="title">People</div></header>
                 <div class="body">
@@ -79,7 +80,7 @@
             </div>
 
             <div class="page profile right">
-                <header class="header"><div class="profile title">Profile</div></header>
+                <header class="header material"><div class="profile title">Profile</div></header>
                 <div class="body">
                     <div class="profile-header">
                         <div class="page">
@@ -143,7 +144,7 @@
             </div>
         </div>
 
-        <footer class="footer">
+        <footer class="footer material l1">
             <a href="#!/streams" class="item streams">Tweets</a>
             <a href="#!/messages" class="item messages">Messages<div class="count hidden"></div></a>
             <a href="#!/notifications" class="item notifications">Notifications</a>
@@ -153,12 +154,12 @@
     </div>
 	
     <template id="tweet-layout">
-        <li class="tweet collapsed table" data-id="">
-            <div class="user-image-container td"><span class="user-image"></span></div>
-            <div class="td">
-                <div class="tweet-header tr">
-                    <div class="td"><span class="displayname"></span><span class="username"></span></div>
-                    <div class="datetime td"></div>
+        <li class="tweet" data-id="">
+            <div class="user-image-container"><span class="user-image"></span></div>
+            <div>
+                <div class="tweet-header">
+                    <div class="datetime"></div>
+                    <div class=""><span class="displayname"></span><span class="username"></span></div>
                 </div>
                 <div class="tweet-body tr">
                     <div class="td text"></div>
@@ -210,9 +211,9 @@
 	
     <template id="timeline-layout">
         <div class="page" data-id="">
-            <header class="header"><div class="title"></div><a href="#!/people/profile"><div class="item profile"></div></a></header>
-            <div class="body">
-                <div class="check-new loader closed">release to check for new Tweets</div>
+            <header class="header material"><div class="title"></div><a href="#!/people/profile"><div class="item profile"></div></a></header>
+            <div class="body waterfall">
+                <div class="check-new loader material l1 closed">release to check for new Tweets</div>
                 <ul class="tweet-list"></ul>
             </div>
         </div>
@@ -233,6 +234,7 @@
     <script type="text/javascript" src="js/misc.js"></script>
     <script type="text/javascript" src="js/bindings.js"></script>
     <script type="text/javascript" src="js/audio.js"></script>
+    <script type="text/javascript" src="js/cache.js"></script>
     <script type="text/javascript" src="js/initializer.js"></script>
     <script type="text/javascript" src="js/app.js"></script>
 </body>

@@ -7,7 +7,7 @@ $_('grapeTweet').main(function(){
     var { Net, Misc, Storage, UI, Audio, Bindings, Initializer } = App.modules;
   
     this.twitterSocket= new OAuthClient('twitter', 'https://api.twitter.com', 'TLeiAYSBAbIKnSWZ9qIg72PLI', 'HTSLlTLxiC1fbLzkxa4D2YaYRxRA58Eor8zGFMQEpRPYou4g2V', { mozSystem : true });
-    this.pushServerSocket= new Socket(Socket.HTTP, 'http://grapetweet-titannano.rhcloud.com',  { mozSystem : true });
+    this.pushServerSocket= new Socket(Socket.HTTP, 'https://grapetweet-titannano.rhcloud.com',  { mozSystem : true });
 	
     $$.App= this;
     
@@ -433,7 +433,7 @@ $_('grapeTweet').main(function(){
 // 	    everything is done we can open the UI.
         $('dom').select('.splash .loading').classList.add('hidden');
         $('dom').select('.client').classList.remove('right');
-        $('dom').select('head meta[name="theme-color"]').setAttribute('content', '#29a1ed');
+        $('dom').select('head meta[name="theme-color"]').setAttribute('content', '#2196f3');
         $('dom').select('.splash').transition('left').then(function(){
             $('dom').select('.splash').classList.add('hidden');
             $('dom').select('.client').classList.add('searchOpen');

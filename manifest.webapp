@@ -23,6 +23,10 @@
     },
     "systemXHR": {
       "description": "required to connect to the grape server and the twitter API."
+    },
+    "device-storage:sdcard": {
+      "description": "Required for file handling",
+      "access": "readwrite"
     }
   },
   "messages": [

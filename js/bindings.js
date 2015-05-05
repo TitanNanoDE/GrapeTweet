@@ -1,6 +1,6 @@
 $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done){
     
-    var { Net, UI, Storage } = App.modules;
+    var { Net, UI } = App.modules;
     
     var ui= function(){
         
@@ -54,20 +54,48 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
             }
         });
 
+        var riseHeader= function(){
+            if(this.scrollTop > 0){
+                if(!this.classList.contains('l1'))
+                    this.parentNode.querySelector('.header').classList.add('l1');
+            }else{
+                this.parentNode.querySelector('.header').classList.remove('l1');
+            }
+        };
+
+        $$.addEventListener('touchstart', function(e){
+            var exit= function(){
+                this.removeEventListener('scroll', riseHeader);
+                $$.removeEventListener('touchend', exit);
+            };
+            var target= null;
+
+            if(target= UI.findElement(e.target, '.body.waterfall')){
+                target.addEventListener('scroll', riseHeader);
+                $$.addEventListener('touchend', exit);
+            }
+        });
+
 //	    mouse events for lists
         $('dom').select('.conv-list').addEventListener('click', App.openChat, false);
         $('dom').select('.contact-list').addEventListener('click', App.openChat, false);
         
-        $('dom').select('.conv-list').addEventListener('contextmenu', function(e){
+        $('dom').select('.conv-list').addEventListener('contextmenu', function(){
             $$.navigator.vibrate([150]);
             $$.location.hash= '#!/people/profile';
         });
-/*        $('dom').select('.tweet-list').addEventListener('click', function(){
-			if(this.classList.contains('collapsed'))
-				this.classList.remove('collapsed');
-            else
-				this.classList.add('collapsed');
-		}, false);*/
+        $('dom').select('.client').addEventListener('click', function(e){
+			if(UI.findElement(e.target, '.tweet-list')){
+                if(e.target.classList.contains('merged')){
+                    $('dom').selectAll('.tweet:not(.merged)').forEach(function(item){
+                        item.classList.add('merged');
+                    });
+                    e.target.classList.remove('merged');
+                }else{
+                    e.target.classList.add('merged');
+                }
+            }
+		}, false);
         
 //		chat
         $('dom').select('.page.chat .send').addEventListener('click', function(){
@@ -147,7 +175,8 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
             for(var i= 0; i < this.length; i++){
                 if(!e.touches.find(finder)){
                     var client= $('dom').select('.client');
-                    client.classList.remove('searchOpen');
+                    if(client.classList.contains('searchOpen'))
+                        client.classList.remove('searchOpen');
                 }
             }
         }.bind(data));
@@ -221,7 +250,7 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
         });
 
         this.navigator.mozSetMessageHandler('notification', function(notification){
-            console.log(notification);
+            $$.console.log(notification);
         });
     };
     

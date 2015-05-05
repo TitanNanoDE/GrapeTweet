@@ -355,17 +355,12 @@ $_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
 			});
 		},
 
-		cacheImage : function(url){
+		downloadImage : function(url){
 			return new $$.Promise(function(done){
-				if(App.cache.images[url])
-					done(App.cache.images[url]);
-				else{
-					App.twitterSocket.download(url, true).then(function(blob){
-						var blob_url= $$.URL.createObjectURL(blob);
-						App.cache.images[url]= [blob_url, blob];
-						done([blob_url, blob]);
-					});
-				}
+                App.twitterSocket.download(url, true).then(function(blob){
+                    var blob_url= $$.URL.createObjectURL(blob);
+                    done({ url : blob_url, blob : blob });
+                });
 			});
 		},
 
