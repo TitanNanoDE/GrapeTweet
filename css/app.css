@@ -340,6 +340,7 @@ a:focus, input:focus, div:focus{
 
 .body.c{ 
 	bottom: 60px;
+    background-color: #fff;
 }
 
 .client.change .sheet .body{
@@ -349,7 +350,7 @@ a:focus, input:focus, div:focus{
 .footer{
 	position: absolute;
 	height: 4.5rem;
-	background-color: #bdbdbd;
+	background-color: #e0e0e0;
 	bottom: 0;
 	z-index: 4;
 }
@@ -383,7 +384,7 @@ a:focus, input:focus, div:focus{
 }
 
 .footer .item:active, .footer .item.active{
-	background-color: #e0e0e0;
+	background-color: #bdbdbd;
 }
 
 .footer .item .count{
@@ -422,6 +423,7 @@ a:focus, input:focus, div:focus{
 
 .message-list{
 	padding: 10px 0;
+	background-color: #fff;
 }
 
 .loader{
@@ -435,12 +437,12 @@ a:focus, input:focus, div:focus{
 }
 
 .loader.closed{
-    transition: margin-top linear 0.5s;
+    transition: transform linear 0.5s;
 }
 
 .loader.open{
-    transition: margin-top linear 0.2s;
-    margin-top: 0;
+    transition: transform linear 0.2s;
+    transform: translateY(100%);
 }
 
 .tweet, .message{
@@ -461,6 +463,10 @@ a:focus, input:focus, div:focus{
 	padding: 3vh 2.5vw;
 	box-sizing: border-box;
     background: #fff;
+}
+
+.conv-main, .contact-info {
+    min-height: 15vw;
 }
 
 .tweet:active, .conv:active, .contact:active{
@@ -514,6 +520,7 @@ a:focus, input:focus, div:focus{
 
 .tweet-body .text, .conv-body .text{
 	padding: 5px 0;
+    display: inline-block;
 }
 
 .conv.my .conv-body .text{
@@ -546,8 +553,14 @@ a:focus, input:focus, div:focus{
 }
 
 .chat .user-image{
-	vertical-align: bottom;
-	margin-bottom: 4px;
+    vertical-align: bottom;
+    margin-bottom: 4px;
+    float: left;
+    margin-right: 7px;
+    background-color: transparent;
+    height: 2.3rem;
+    width: 2.3rem;
+    border-radius: 50%;
 }
 
 .chat .message .text{
@@ -576,7 +589,7 @@ a:focus, input:focus, div:focus{
 }
 
 .chat .message:not(.my) .date{
-	margin-left: calc(15vw + 5px);
+	margin-left: calc(2.3rem + 7px);
 }
 
 .chat .message.my .text{

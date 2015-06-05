@@ -4,21 +4,23 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net', 'Cache'], function(App,
 
     var { Storage, Misc, Net, Cache } = App.modules;
 
-    var renderMessage= function(item, contact, insertBefore){
+    var renderMessage= function(item, contact, insertBefore, avatarize){
         var template_default= $('dom').select('#chat-message-layout').content;
         var template_my= $('dom').select('#chat-my-message-layout').content;
         var list= $('dom').select('.message-list');
         var firstElement= $('dom').select('.page.chat .message-list li');
         var element= null;
-        contact= contact || (item.sender_id != App.account.userID ? item.sender : item.recipient);
+        var out = item.sender_id == App.Account.userId;
+        contact= contact || (item.sender_id != App.Account.userID ? item.sender : item.recipient);
 
         if(!list.querySelector('li[data-id="'+ item.id_str +'"]')){
-            if(item.sender_id == App.account.userId){
+            if(out){
                 element= template_my.cloneNode(true);
                 element.querySelector('.message').dataset.id= item.id_str;
             }else{
                 element= template_default.cloneNode(true);
-                element.querySelector('.user-image').style.setProperty('background-image', 'url('+ contact.profile_image_url +')');
+                if(avatarize)
+                    element.querySelector('.user-image').style.setProperty('background-image', 'url('+ contact.profile_image_url +')');
                 element.querySelector('.message').dataset.id= item.id_str;
             }
 
@@ -34,6 +36,8 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net', 'Cache'], function(App,
                 list.appendChild(element);
             else
                 list.insertBefore(element, firstElement);
+
+            return out;
         }
     };
 
@@ -172,167 +176,140 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net', 'Cache'], function(App,
         },
 
         renderContacts : function(){
-			return new $$.Promise(function(done){
-                var template= $('dom').select('#contact-layout').content;
-                var list= $('dom').select('.contact-list');
+            var contacts= App.Contacts.record;
+            var template= $('dom').select('#contact-layout').content;
+            var list= $('dom').select('.contact-list');
 
-                list.innerHTML= '';
+            list.innerHTML= '';
 
-                Storage.getContacts().then(function(contacts){
-                    $$.Object.keys(contacts).forEach(function(item){
-                        item= contacts[item];
-                        var element= template.cloneNode(true);
+            $$.Object.keys(contacts).forEach(function(item){
+                item= contacts[item];
+                var element= template.cloneNode(true);
 
-                        element.querySelector('.contact').dataset.userId= item.id;
-                        element.querySelector('.user-image').style.setProperty('background-image', 'url("'+ item.profile_image_url +'")');
-                        element.querySelector('.displayname').textContent= item.name;
-                        element.querySelector('.username').textContent= '@' + item.screen_name;
+                element.querySelector('.contact').dataset.userId= item.id;
+                element.querySelector('.user-image').style.setProperty('background-image', 'url("'+ item.profile_image_url +'")');
+                element.querySelector('.displayname').textContent= item.name;
+                element.querySelector('.username').textContent= '@' + item.screen_name;
 
-                        list.appendChild(element);
-                    });
-                    done();
-                });
+                list.appendChild(element);
             });
         },
 
         renderChats : function(chatId){
-            return new Promise(function(done){
-                $$.console.time('loadingConversations');
-                ((chatId) ? Storage.getConversation(chatId) : Storage.getConversationsList()).then(function(conversations){
-                    var promises= [];
-                    $$.console.timeEnd('loadingConversations');
+            var conversations = App.Conversations.record;
+            var tempList= {};
+            var contacts = App.Contacts.record;
+            var template= $('dom').select('#conv-layout').content;
+            var list= $('dom').select('.conv-list');
 
-                    $$.console.time('loadingMessages');
-                    if(chatId){
-                        promises.push(Storage.getMessage(conversations.lastMessage));
-                        var conv= conversations;
-                        conversations= {};
-                        conversations[chatId]= conv;
-                    }else{
-                        $$.Object.keys(conversations).forEach(function(key){
-                            promises.push(Storage.getMessage(conversations[key].lastMessage));
-                        });
-                    }
+            if(!chatId){
 
-                    promises.push(Storage.getContacts());
+//              sort conversations
+                $$.Object.keys(conversations).map(function(id){
+                    return { id:id, created_at : conversations[id].lastMessage.created_at };
+                })
 
-                    $$.Promise.all(promises).then(function(messages){
-                        $$.console.timeEnd('loadingMessages');
-                        var template= $('dom').select('#conv-layout').content;
-                        var list= $('dom').select('.conv-list');
-                        var contacts= messages.pop();
-
-//                      sort conversations
-                        var l= [];
-                        var covNew= {};
-                        $$.Object.keys(conversations).forEach(function(id, index){
-                            l.push({ id:id, created_at : messages[index].created_at });
-                        });
-                        l.sort(Misc.sortByDate).reverse().forEach(function(item){
-                            covNew[item.id]= conversations[item.id];
-                        });
-                        messages.sort(Misc.sortByDate).reverse();
-                        conversations= covNew;
-
-                        $$.Object.keys(conversations).forEach(function(userId, index){
-                            var latest= messages[index];
-                            var user= contacts[userId]  || (latest.sender_id_str != App.account.userId ? latest.sender : latest.recipient);
-                            var conv= conversations[userId];
-                            var old= null;
-
-                            var element= template.cloneNode(true);
-
-                            element.querySelector('.conv').dataset.userId= userId;
-
-                            if(conv.unread > 0)
-                                element.querySelector('.conv').classList.add('unread');
-                            else if(latest.sender_id == App.account.userId)
-                                element.querySelector('.conv').classList.add('my');
-
-                            element.querySelector('.user-image').style.setProperty('background-image', 'url('+ user.profile_image_url +')');
-                            element.querySelector('.displayname').textContent= user.name;
-
-                            if( (user.name + '@' + user.screen_name).length > 23)
-                                element.querySelector('.username').textContent= ('@' + user.screen_name).substr(0, 23-user.name.length) + '...';
-                            else
-                                element.querySelector('.username').textContent= '@' + user.screen_name;
-
-                            element.querySelector('.datetime').textContent= getTimeSince(latest.created_at);
-                            element.querySelector('.conv-body .text').textContent= ((latest.text.length <= 40) ? latest.text : latest.text.substr(0, 40) + '...');
-
-                            if((old= list.querySelector('[data-user-id="'+ userId +'"]')) !== null){
-                                list.replaceChild(element, old);
-                            }else{
-                                list.appendChild(element);
-                            }
-                        });
-
-                        done();
-                    });
+                .sort(Misc.sortByDate).reverse().map(function(item){
+                    tempList[item.id]= conversations[item.id];
                 });
+
+                conversations= tempList;
+
+            }else{
+                conversations= {
+                    chatId : conversations[chatId]
+                };
+            }
+
+            $$.Object.keys(conversations).forEach(function(userId){
+                var conv= conversations[userId];
+                var latest= conv.lastMessage;
+                var user= contacts[userId]  || (latest.sender_id_str != App.Account.userId ? latest.sender : latest.recipient);
+                var old= null;
+                var element= template.cloneNode(true);
+
+                element.querySelector('.conv').dataset.userId= userId;
+
+                if(conv.unread > 0)
+                    element.querySelector('.conv').classList.add('unread');
+                else if(latest.sender_id == App.Account.userId)
+                    element.querySelector('.conv').classList.add('my');
+
+                element.querySelector('.user-image').style.setProperty('background-image', 'url('+ user.profile_image_url +')');
+                element.querySelector('.displayname').textContent= user.name;
+
+                if( (user.name + '@' + user.screen_name).length > 23)
+                    element.querySelector('.username').textContent= ('@' + user.screen_name).substr(0, 23-user.name.length) + '...';
+                else
+                    element.querySelector('.username').textContent= '@' + user.screen_name;
+
+                element.querySelector('.datetime').textContent= getTimeSince(latest.created_at);
+                element.querySelector('.conv-body .text').textContent= ((latest.text.length <= 40) ? latest.text : latest.text.substr(0, 40) + '...');
+
+                if((old= list.querySelector('[data-user-id="'+ userId +'"]')) !== null){
+                    list.replaceChild(element, old);
+                }else{
+                    list.appendChild(element);
+                }
             });
         },
 
         renderChat : function(userId){
-            return new $$.Promise(function(done){
-                $$.Promise.all([Storage.getConversation(userId), Storage.getContact(userId)]).then(function(values){
-                    var conversation= values[0];
-                    var contact= values[1];
-                    var list= $('dom').select('.message-list');
-                    var userImage= $('dom').select('.page.chat .header-user-image');
-                    var body= $('dom').select('.page.chat .body.c');
+            var conversation= App.Conversations.record[userId];
+            var contact= App.Contacts.record[userId] ? App.Contacts.record[userId] : (conversation.lastMessage.sender || conversation.lastMessage.recipient);
+            var list= $('dom').select('.message-list');
+            var differentConv= (list.dataset.userId != userId);
+            var userImage= $('dom').select('.page.chat .header-user-image');
+            var body= $('dom').select('.page.chat .body.c');
 
-//					close notification for this conversation
-                    $$.Notification.get().then(function(list){
-                        list.forEach(function(item){
-                            if(item.tag == userId)
-								item.close();
-                        });
-                    });
-
-                    var differentConv= (list.dataset.userId != userId);
-
-//					setup page
-                    if(differentConv){
-                        list.innerHTML= '';
-                        $('dom').select('.page.chat .back-title').textContent= contact.name;
-
-                        userImage.style.setProperty('background-image', 'url('+ contact.profile_image_url +')');
-                        userImage.href= '#!/people/profile/'+ contact.id;
-                        list.dataset.userId= contact.id;
-                    }
-
-                    if(conversation){
-                        var handle= function(messages){
-                            if(messages.length > 0){
-                                messages.sort(Misc.sortByDate);
-                                messages.forEach(function(item){
-                                    renderMessage(item, contact);
-                                });
-
-                                App.account.unreadMessages-= conversation.unread;
-                                conversation.lastReadMessage= messages.last().id_str;
-                                conversation.unread= 0;
-                                Storage.storeConversation(conversation);
-
-                                interface.renderFooterStatus(App.account);
-                            }
-                            done();
-                        };
-
-                        if(differentConv){
-                            Storage.getMessagesChunkBefore(conversation.lastMessage, true).then(handle).then(function(){
-                                body.scrollTop= body.scrollHeight;
-                            });
-                        }else{
-                            var scroll= (body.scrollTop == (body.scrollHeight - body.offsetHeight));
-                            Storage.getNewMessagesSince(conversation.lastReadMessage).then(handle).then(function(){
-                                if(scroll) body.scrollTop= body.scrollHeight;
-                            });
-                        }
-                    }else done();
+//			close notification for this conversation
+            $$.Notification.get().then(function(list){
+                list.forEach(function(item){
+                    if(item.tag == userId)
+                        item.close();
                 });
             });
+
+//			setup page
+            if(differentConv){
+                list.innerHTML= '';
+                $('dom').select('.page.chat .back-title').textContent= contact.name;
+
+                userImage.style.setProperty('background-image', 'url('+ contact.profile_image_url +')');
+                userImage.href= '#!/people/profile/'+ contact.id;
+                list.dataset.userId= contact.id;
+            }
+
+            if(conversation){
+                var handle= function(messages){
+                    var avatarize = (list.childNodes.length > 0) ? list.lastElementChild.classList.contains('me') : true;
+
+                    if(messages.length > 0){
+                        messages.sort(Misc.sortByDate);
+                        messages.forEach(function(item){
+                            avatarize = renderMessage(item, contact, false, avatarize);
+                        });
+
+                        App.Account.unreadMessages-= conversation.unread;
+                        conversation.lastReadMessage= messages.last().id_str;
+                        conversation.unread= 0;
+                        App.Conversations.save();
+
+                        interface.renderFooterStatus(App.Account);
+                    }
+                };
+
+                if(differentConv){
+                    Storage.getMessagesChunkBefore(conversation.lastMessage.id_str, true).then(handle).then(function(){
+                        body.scrollTop= body.scrollHeight;
+                    });
+                }else{
+                    var scroll= (body.scrollTop == (body.scrollHeight - body.offsetHeight));
+                    Storage.getNewMessagesSince(conversation.lastReadMessage).then(handle).then(function(){
+                        if(scroll) body.scrollTop= body.scrollHeight;
+                    });
+                }
+            }
         },
 
         renderAdditionalChunk : function(){
@@ -342,12 +319,13 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net', 'Cache'], function(App,
                 var scrollHeight= body.scrollHeight;
 
                 if(lastElement){
-                    $$.Promise.all([Storage.getMessagesChunkBefore(lastElement.dataset.id, false), Storage.getContact(App.dataStatus.lastChat)]).then(function(values){
+                    $$.Promise.all([Storage.getMessagesChunkBefore(lastElement.dataset.id, false), Storage.getContact(App.DataStatus.DMs.lastChat)]).then(function(values){
                         var messages= values[0].sort(Misc.sortByDate);
                         var contact= values[1];
+                        var avatarize = $('dom').select('.page.chat .message-list').lastElementChild.classList.contains('me');
 
                         messages.reverse().forEach(function(item){
-                            renderMessage(item, contact, true);
+                            avatarize = renderMessage(item, contact, true, avatarize);
                         });
 
                         body.scrollTop= body.scrollHeight - scrollHeight - 20;
@@ -409,10 +387,11 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net', 'Cache'], function(App,
                         this.target.addEventListener('touchend', this.release.bind(this));
                         this.element.classList.remove('closed');
                     }else{
+                        e.preventDefault();
                         var force= e.touches[this.touch].screenY - this.start;
-                        var y= -75+(force / 3);
-                        if(y > -76){
-                            this.element.style.setProperty('margin-top', y + 'px');
+                        var y= (force / 5);
+                        if(y < 76){
+                            this.element.style.setProperty('transform', 'translateY(' + y + 'px)');
                         }else{
                             this.release.apply(this);
                         }
@@ -428,8 +407,8 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net', 'Cache'], function(App,
                 open : false,
                 release : function(e){
                     if(this.enabled && (!e || e.touches.indexOf(this.touch) < 0)){
-                        var state= parseInt(this.element.style.getPropertyValue('margin-top').replace(/px/, ''));
-                        if(state > -37){
+                        var state= parseInt(this.element.style.getPropertyValue('transform').replace(/translateY\(/, '').replace(/px\)/, ''));
+                        if(state > 37){
                             this.element.classList.add('open');
                             this.element.textContent= 'checking for new Tweets...';
                             this.open= true;
@@ -457,7 +436,7 @@ $_('grapeTweet').module('UI', ['Storage', 'Misc', 'Net', 'Cache'], function(App,
                         }
                         this.start= 0;
                         this.enabled= false;
-                        this.element.style.setProperty('margin-top', '');
+                        this.element.style.setProperty('transform', '');
                     }
                 }
             }));

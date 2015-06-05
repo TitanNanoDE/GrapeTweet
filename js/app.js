@@ -10,64 +10,56 @@ $_('grapeTweet').main(function(){
     this.pushServerSocket= new Socket(Socket.HTTP, 'https://grapetweet-titannano.rhcloud.com',  { mozSystem : true });
 	
     $$.App= this;
-    
-    var appStateHandler= {
-        get : function(target, property){
 
-            var features= {
-                apply : function(){
-                    objectReplace.apply(this, arguments);
-                    Storage.saveApplicationState(this);
-                }
-            };
+    var Defaults = {
+        Account : {
+            name : 'Account',
 
-            if(property in features){
-                return features[property].bind(target);
-            }else{
-                return target[property];
-            }
+            unreadMessages : 0,
+            userId : 0
         },
-        set : function(target, property, value){
-            target[property]= value;
-            Storage.saveApplicationState(target);
+
+        Conversations : {
+            name : 'Conversations',
+            record : {}
+        },
+
+        Contacts : {
+            name : 'Contacts',
+            record : {}
+        },
+
+        PushServer : {
+            name : 'PushServer',
+
+            ready : false,
+            id : 0,
+            endpoint : '',
+            lastRefresh : 0
+        },
+	
+        DataStatus : {
+            name : 'DataStatus',
+
+            DMs : {
+                lastIn : '',
+                lastOut : '',
+                lastPull : 0,
+                lastChat : ''
+            },
+
+            contacts : {
+                fetchingInfo : false,
+                nextFollowingCursor : '-1',
+                nextFollowerCursor : '-1',
+                nextContact : '',
+                lastSync : '',
+                followerCache : [],
+                followingCache : [],
+                contactsCache : []
+            }
         }
     };
-    
-    this.account= new $$.Proxy({
-        name : 'account',
-        unreadMessages : 0,
-        userId : 0
-    }, appStateHandler);
-	
-    this.pushServer= new $$.Proxy({
-        name : 'pushServer',
-        ready : false,
-        id : 0,
-        endpoint : '',
-        lastRefresh : 0
-    }, appStateHandler);
-	
-    this.dataStatus= new $$.Proxy({
-        name : 'dataStatus',
-        lastDM_in : '',
-        lastDM_out : '',
-        lastDM_pull : 0,
-        lastChat : '',
-    }, appStateHandler);
-	
-    this.syncStatus= new $$.Proxy({
-        name : 'syncStatus',
-        contacts : {
-            fetchingInfo : false,
-            nextFollowingCursor : '-1',
-            nextFollowerCursor : '-1',
-            nextContact : '',
-            lastSync : '',
-            followerCache : [],
-            followingCache : [],
-            contactsCache : []
-        }
-    }, appStateHandler);
 
     this.loadingChunk= false;
 	
@@ -75,14 +67,18 @@ $_('grapeTweet').main(function(){
         images : {}
     };
 
-    var objectReplace= function(update){
-        var self= this;
+    this.objectReplace= function(self, update){
+        update= update || {};
+
         $$.Object.keys(update).forEach(function(item){
-            if(typeof update[item] == 'object' && !$$.Array.isArray(update[item]) && update[item] !== null)
-                objectReplace.apply(self[item], [update[item]]);
-            else
+            if(typeof update[item] == 'object' && !$$.Array.isArray(update[item]) && update[item] !== null){
+                self[item]= self[item] || {};
+                App.objectReplace(self[item], update[item]);
+            }else
                 self[item]= update[item];
         });
+
+        return self;
     };
 
     var notificationClick= function(e){
@@ -91,11 +87,13 @@ $_('grapeTweet').main(function(){
     };
 
     var requestEndpoint= function(callback){
-/*        $$.navigator.push.registrations().onsuccess= function(){
-            this.result.forEach(function(item){
-                $$.navigator.push.unregister(item.pushEndpoint);
-            });
-        };*/
+        $$.navigator.push.registrations().onsuccess= function(){
+            if(this.result instanceof Array){
+                this.result.forEach(function(item){
+                    $$.navigator.push.unregister(item.pushEndpoint);
+                });
+            }
+        };
 
         $$.console.log('requesting push-endpoint...');
         var endpointRequest= $$.navigator.push.register();
@@ -120,7 +118,15 @@ $_('grapeTweet').main(function(){
                     x1 : App.twitterSocket.exposeToken()[0],
                     x2 : App.twitterSocket.exposeToken()[1]
                 })).then(function(){
-                    App.pushServer.apply({ id : data.clientId, ready : true, endpoint : endpoint, lastRefresh : Date.now() });
+                    App.objectReplace(App.PushServer, {
+                        id : data.clientId,
+                        ready : true,
+                        endpoint : endpoint,
+                        lastRefresh : Date.now()
+                    });
+
+                    App.PushServer.save();
+
                     $$.console.log('push-server successfully registered!');
                 });
             });
@@ -128,19 +134,28 @@ $_('grapeTweet').main(function(){
     };
 	
     this.updatePushServer= function(force){
-        if(!App.pushServer.ready){
+        if(!App.PushServer.ready){
             registerPushClient();
-        }else if( (Date.now() - App.pushServer.lastRefresh) > 7200000 || force){
+        }else if( (Date.now() - App.PushServer.lastRefresh) > 7200000 || force){
             requestEndpoint(function(endpoint){
-                App.pushServerSocket.request('/updateEndpoint', $$.JSON.stringify({ id : App.pushServer.id, endpoint : endpoint })).then(function(data){
+                App.pushServerSocket.request('/updateEndpoint', $$.JSON.stringify({ id : App.PushServer.id, endpoint : endpoint })).then(function(data){
                     data= $$.JSON.parse(data);
 
                     if(data.status > 0){
-                        App.pushServer.apply({ endpoint : endpoint, lastRefresh : Date.now() });
+                        App.objectReplace(App.PushServer, {
+                            endpoint : endpoint,
+                            lastRefresh : Date.now()
+                        });
+
+                        App.PushServer.save();
+
                         $$.console.log('push-endpoint successfully updated!');
                     }else{
                         $$.console.log('server doesn\'t know us :/');
-                        App.pushServer.ready= false;
+                        App.PushServer.ready= false;
+
+                        App.PushServer.save();
+
                         App.updatePushServer();
                     }
                 });
@@ -158,7 +173,7 @@ $_('grapeTweet').main(function(){
             if(data.status > 0){
                 data.messages.forEach(function(item){
                     if(item.type == 'direct_message'){
-                        var convId= (item.sender_id == App.account.userId) ? item.recipient_id : item.sender_id;
+                        var convId= (item.sender_id == App.Account.userId) ? item.recipient_id : item.sender_id;
 
                         App.integrateIntoMessagesChain(item, conversations[convId]).then(function(){
                             App.notify(convId);
@@ -168,8 +183,8 @@ $_('grapeTweet').main(function(){
                                 UI.renderChat(chatPage.dataset.userId);
                         });
                     }else if(item.type == 'server_crash'){
-                        App.pushServerSocket.request('/reverify', $$.JSON.stringify({
-                            id : App.pushServer.id,
+                        Socket.request('/reverify', $$.JSON.stringify({
+                            id : App.PushServer.id,
                             x1 : App.twitterSocket.exposeToken()[0],
                             x2 : App.twitterSocket.exposeToken()[1]
                         })).then();
@@ -185,37 +200,38 @@ $_('grapeTweet').main(function(){
     };
 	
 	this.openChat= function(e){
-        App.dataStatus.lastChat= ((e.target) ? e.target.dataset.userId : e);
+        App.DataStatus.DMs.lastChat= ((e.target) ? e.target.dataset.userId : e);
+        App.DataStatus.save();
+
         $$.location.hash= '#!/messages/chat';
 	};
 	
 	this.notify= function(conversationId){
-		Storage.getConversation(conversationId).then(function(conversation){
-			Storage.getMessage(conversation.lastMessage).then(function(message){
-                UI.renderChats(conversationId);
+        var conversation= App.conversations.record[conversationId];
+        var message= conversation.lastMessage;
+
+        UI.renderChats(conversationId);
 				
-                if(message.sender_id != App.account.userId){
-					$$.console.log('display Notification!!');
-					UI.renderFooterStatus(App.account);				
-					if($$.document.hidden || $$.location.hash.indexOf('/messages') < 0 || ($$.location.hash.indexOf('/chat') > -1 && App.dataStatus.lastChat != message.sender_id)){
-						var textBody= (conversation.unread < 2) ? Misc.cutdown(message.text) : conversation.unread + ' new messages';
+        if(message.sender_id != App.Account.userId){
+            $$.console.log('display Notification!!');
+            UI.renderFooterStatus(App.Account);
+            if($$.document.hidden || $$.location.hash.indexOf('/messages') < 0 || ($$.location.hash.indexOf('/chat') > -1 && App.DataStatus.lastChat != message.sender_id)){
+                var textBody= (conversation.unread < 2) ? Misc.cutdown(message.text) : conversation.unread + ' new messages';
 						
-						var notification= new $$.Notification(message.sender.name, {
-							body : textBody,
-							tag : message.sender_id,
-							icon : message.sender.profile_image_url
-						});
+                var notification= new $$.Notification(message.sender.name, {
+                    body : textBody,
+                    tag : message.sender_id,
+                    icon : message.sender.profile_image_url
+                });
 		
-						notification.addEventListener('click', notificationClick, false);
-					}else{
-						Audio.play('recieved');
-                        $$.navigator.vibrate([250,300,250]);
-					}	
-				}else if(!$$.document.hidden){
-					Audio.play('sent');
-				}
-			});
-		});
+                notification.addEventListener('click', notificationClick, false);
+            }else{
+                Audio.play('recieved');
+                $$.navigator.vibrate([250,300,250]);
+            }
+        }else if(!$$.document.hidden){
+            Audio.play('sent');
+        }
 	};
 			
 	this.show= function(){
@@ -258,17 +274,21 @@ $_('grapeTweet').main(function(){
             }
         },
         integrate : function(message, conversation, callback){
-            if(conversation && conversation.lastMessage != message.id_str){
-                message.last= conversation.lastMessage;
+            if(conversation && conversation.lastMessage != message){
+                message.last= conversation.lastMessage.id_str;
                 message.next= null;
                         
-                conversation.lastMessage= message.id_str;
-                if(message.sender_id != App.account.userId){
+                conversation.lastMessage= message;
+                if(message.sender_id != App.Account.userId){
                     conversation.unread= (conversation.unread > 0) ? conversation.unread+1 : 1;
-                    App.account.unreadMessages= (App.account.unreadMessages > 0) ? App.account.unreadMessages+1 : 1;
+                    App.Account.unreadMessages= (App.Account.unreadMessages > 0) ? App.Account.unreadMessages+1 : 1;
+                    App.Account.save();
                 }
+
+                App.Conversations.record[conversation.id] = conversation;
+                App.Conversations.save();
 				
-                $$.Promise.all([Storage.storeMessage(message), Storage.storeConversation(conversation)]).then(function(){
+                Storage.storeMessage(message).then(function(){
                     Storage.getMessage(message.last).then(function(oldMessage){
                         oldMessage.next= message.id_str;
                         Storage.storeMessage(oldMessage).then(callback);
@@ -281,11 +301,14 @@ $_('grapeTweet').main(function(){
                     Storage.storeMessage(message).then(callback);
                 });
             }else{
-                var convId= (message.sender_id == App.account.userId) ? message.recipient_id : message.sender_id;
+                var convId= (message.sender_id == App.Account.userId) ? message.recipient_id : message.sender_id;
                 message.last= null;
                 message.next= null;
 	   			
-                $$.Promise.all([ Storage.storeConversation(App.createConversation(convId, message.id_str, (message.sender_id != App.account.userId) ? 1 : 0)), Storage.storeMessage(message) ]).then(callback);
+                App.Conversations.record[convId] = App.createConversation(convId, message, (message.sender_id != App.Account.userId) ? 1 : 0);
+                App.Conversations.save();
+
+                Storage.storeMessage(message).then(callback);
             }
         }
     });
@@ -357,7 +380,8 @@ $_('grapeTweet').main(function(){
                     delete $$.onOAuthCallback;
                     $$.console.log(data);
 					App.twitterSocket.verify('/oauth/access_token', data[1][1]).then(function(userId){
-						App.account.userId= userId;
+						App.Account.userId= userId;
+                        App.Account.save();
 						done();
 					});
 				};
@@ -367,29 +391,29 @@ $_('grapeTweet').main(function(){
 			done();
 			spinner.classList.remove('hidden');
 		}
-    })
+    }).depends('stores')
 
-    .job('applicationStates', function(done){
-		Storage.getApplicationStates().then(function(values){
-            values.forEach(function(item){
-                App[item.name].apply(item);
+    .job('stores', function(done){
+        var Store= Storage.Store;
+
+		Storage.getStores().then(function(stores){
+            Object.keys(Defaults).forEach(function(name){
+                App[name]= new Store(App.objectReplace(Defaults[name], stores.find(function(item){
+                    return item.name == name;
+                })));
+                App[name].save();
             });
         }).then(done);
-    }).depends('login')
+    })
 
     .job('contacts', function(done){
-        if(App.syncStatus.contacts.lastSync === ''){
-            Net.syncContacts().then(function(){
-                UI.renderContacts().then();
-                done();
-            });
-        }else{
-            Net.syncContacts().then(function(){
-                UI.renderContacts().then();
-            });
+        if(App.DataStatus.contacts.lastSync === ''){
+            Net.syncContacts().then(done);
+        } else {
+			Net.syncContacts().then(UI.renderContacts);
             done();
         }
-    }).depends('applicationStates')
+    }).depends('login')
 
     .job('directMessages', function(done){
         Storage.checkDirectMessages().then(function(directMessagesStored){
@@ -399,37 +423,31 @@ $_('grapeTweet').main(function(){
                 done();
             }
         });
-    }).depends('applicationStates')
+    }).depends('login')
 
-    .job('timeline', function(done){
+    .init().then(function(){
+
         Storage.getTimeline('$home').then(function(timeline){
             if(!timeline){
                 timeline= App.createTimeline('Home', '$home');
                 Net.fetchNewHomeTweets(timeline).then(function(){
                     UI.renderTimeline(timeline);
-                    UI.renderTweets(timeline).then(done);
+                    UI.renderTweets(timeline);
                 });
             }else{
                 UI.renderTimeline(timeline);
-                UI.renderTweets(timeline).then(done);
+                UI.renderTweets(timeline);
             }
         });
-    }).depends('applicationStates')
 
-    .job('renderChats', function(done){
-        UI.renderChats().then(done);
-    }).depends('applicationStates')
-
-    .job('bindings', function(done){
+        UI.renderChats();
+        UI.renderContacts();
         App.updatePushServer();
         Bindings.ui();
         Bindings.systemMessages.apply($$);
         Bindings.navigation.apply($('hash'));
         $('hash').restore();
-        done();
-    }).depends('applicationStates')
 
-    .init().then(function(){
 // 	    everything is done we can open the UI.
         $('dom').select('.splash .loading').classList.add('hidden');
         $('dom').select('.client').classList.remove('right');

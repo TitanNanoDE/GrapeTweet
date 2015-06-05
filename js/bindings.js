@@ -1,6 +1,6 @@
 $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done){
     
-    var { Net, UI } = App.modules;
+    var { Net, UI, Audio } = App.modules;
     
     var ui= function(){
         
@@ -102,7 +102,7 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
             var message= $('dom').select('.page.chat .text-box .text');
             if(message.textContent !== ""){
                 Net.sendDirectMessage(message.textContent).then(function(){
-                    UI.renderChat(App.dataStatus.lastChat).then(function(){
+                    UI.renderChat(App.DataStatus.lastChat).then(function(){
                         message.textContent= '';
                     });
                 });
@@ -119,7 +119,7 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
                 e.preventDefault();
                 var message= $('dom').select('.page.chat .text-box .text');
                 Net.sendDirectMessage(message.textContent).then(function(){
-                    UI.renderChat(App.dataStatus.lastChat).then(function(){
+                    UI.renderChat(App.DataStatus.lastChat).then(function(){
                         message.textContent= '';
                     });
                 });
@@ -142,7 +142,7 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
                     $$.console.log('Uploading Media: '+percentComplete+'%');
                     progress.style.setProperty('width', percentComplete+'%');
                 }).then(function(){
-//					UI.renderChat(App.dataStatus.lastChat).then(function(){
+//					UI.renderChat(App.DataStatus.lastChat).then(function(){
                     progressBar.classList.remove('show');
 //			   		});
                 });
@@ -180,6 +180,10 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
                 }
             }
         }.bind(data));
+
+      $$.addEventListener('click', function(){
+        Audio.play('snap');
+      });
     };
     
     var navigation= function(){
@@ -206,10 +210,10 @@ $_('grapeTweet').module('Bindings', ['Net', 'UI', 'Storage'], function(App, done
 	
         this.mount('/messages/chat', function(){
             $$.console.time('renderChat');
-            UI.renderChat(App.dataStatus.lastChat).then(function(){
-                $$.console.timeEnd('renderChat');
-                UI.pagesToLeft('messages', 'conversations', 'chat');
-            });
+            UI.renderChat(App.DataStatus.DMs.lastChat);
+            $$.console.timeEnd('renderChat');
+
+            UI.pagesToLeft('messages', 'conversations', 'chat');
         }, function(){
             UI.renderChats();
             UI.pagesFromLeft('messages', 'chat', 'conversations');

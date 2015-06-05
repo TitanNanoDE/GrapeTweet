@@ -171,14 +171,17 @@
 	
     <template id="conv-layout">
         <li class="conv table">
-            <div class="user-image-container td"><span class="user-image"></span></div>
-            <div class="td">
-                <div class="conv-header tr">
-                    <div class="td"><span class="displayname"></span><span class="username"></span></div>
-                    <div class="datetime td"></div>
+            <div class="user-image-container"><span class="user-image"></span></div>
+            <div class="conv-main">
+                <div class="conv-header">
+                    <div class="datetime"></div>
+                    <div>
+                    	<span class="displayname"></span>
+                    	<span class="username"></span>
+                    </div>
                 </div>
-                <div class="conv-body tr">
-                    <div class="td text"></div>
+                <div class="conv-body">
+                    <div class="text"></div>
                 </div>
             </div>
         </li>
@@ -186,8 +189,8 @@
 	
     <template id="contact-layout">
         <li class="contact table">
-            <div class="user-image-container td"><span class="user-image"></span></div>
-            <div class="contact-info td">
+            <div class="user-image-container"><span class="user-image"></span></div>
+            <div class="contact-info">
                 <div class="displayname"></div>
                 <div class="username"></div>
             </div>

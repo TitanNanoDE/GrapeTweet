@@ -24,7 +24,28 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
         }
     };
 
-    var conversationsCached= false;
+    var StorePrototype= {
+        methods : {
+            save : function(){
+                interface.saveStore(this);
+            }
+        },
+
+        get : function(store, property){
+            if(property in this.methods){
+                return this.methods[property].bind(store);
+            }else{
+                return store[property];
+            }
+        },
+
+        set : function(store, property, value){
+            if(!this.methods[property]){
+                store[property]= value;
+            }
+        }
+    };
+
     var contactsCached= false;
 
     var getChunk= function(store, id, includeLast){
@@ -74,10 +95,9 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
 
 		if(e.oldVersion < 1){
 			var direct_messages= db.createObjectStore('direct_messages', { keyPath : 'id_str' });
+            var tweets= db.createObjectStore('tweets', { keyPath : 'id_str' });
 			db.createObjectStore('contacts', { keyPath : 'id' });
-			db.createObjectStore('applicationStates', { keyPath : 'name' });
-			var tweets= db.createObjectStore('tweets', { keyPath : 'id_str' });
-			db.createObjectStore('conversations', { keyPath : 'id' });
+			db.createObjectStore('stores', { keyPath : 'name' });
             db.createObjectStore('timelines', { keyPath : 'id' });
 
 			direct_messages.createIndex('recipient_id', 'recipient_id', { unique : false });
@@ -88,10 +108,15 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
 
 	var interface= {
 
+//      classes
+        Store : function(core){
+            return new Proxy(core, StorePrototype);
+        },
+
 //		application states
-		getApplicationState : function(name){
+		getStore : function(name){
 			return new Promise(function(success, error){
-				var request= db.transaction(['applicationStates']).objectStore('applicationStates').get(name);
+				var request= db.transaction(['stores']).objectStore('stores').get(name);
 				request.onsuccess= function(e){
 					success(e.target.result || {});
 				};
@@ -100,10 +125,10 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
 			});
 		},
 
-        getApplicationStates : function(){
+        getStores : function(){
             return new Promise(function(success, error){
                 var list= [];
-                var request= db.transaction(['applicationStates']).objectStore('applicationStates').openCursor();
+                var request= db.transaction(['stores']).objectStore('stores').openCursor();
                 request.onsuccess= function(e){
                     if(e.target.result){
                         list.push(e.target.result.value);
@@ -117,9 +142,9 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
             });
         },
 
-		saveApplicationState : function(state){
+		saveStore : function(store){
 			return new Promise(function(success){
-				var request= db.transaction(['applicationStates'], 'readwrite').objectStore('applicationStates').put(state);
+				var request= db.transaction(['stores'], 'readwrite').objectStore('stores').put(store);
 
 				request.onsuccess= function(e){
 					success(e.target.result);
@@ -132,38 +157,6 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
 		},
 
 //		Direct Messages
-		getConversation : function(userId){
-			return new Promise(function(success){
-                if(!(userId in caches.conversations)){
-                    var request= db.transaction(['conversations']).objectStore('conversations').get(String(userId));
-
-				    request.onsuccess= function(e){
-                        caches.conversations[userId]= e.target.result;
-                        success(e.target.result);
-				    };
-
-                    request.onerror= function(){
-                        success(null);
-				    };
-                }else{
-                    success(caches.conversations[userId]);
-                }
-			});
-		},
-
-		storeConversation : function(conv){
-			return new Promise(function(success, error){
-                caches.conversations[conv.id]= conv;
-				var request= db.transaction(['conversations'], 'readwrite').objectStore('conversations').put(conv);
-
-				request.onsuccess= function(e){
-					success(e.target.result);
-				};
-
-				request.onerror= error;
-			});
-		},
-
 		storeMessage : function(message){
 			return new Promise(function(success, error){
 				var request= db.transaction(['direct_messages'], 'readwrite').objectStore('direct_messages').put(message);
@@ -254,31 +247,6 @@ $_('grapeTweet').module('Storage', [], function(App, ready){
 
 				request.onerror= error;
 			});
-		},
-
-		getConversationsList : function(){
-			return new Promise(function(done, error){
-                if(!conversationsCached){
-                    var request= db.transaction(['conversations']).objectStore('conversations').openCursor();
-
-				    request.onsuccess= function(e){
-                        var cursor= e.target.result;
-
-					   if(cursor){
-                           if(!(cursor.key in caches.conversations))
-                               caches.conversations[cursor.key]= cursor.value;
-                           cursor.continue();
-					   }else{
-                           conversationsCached= true;
-                           done(caches.conversations);
-                       }
-				    };
-
-                    request.onerror= error;
-                }else{
-                    done(caches.conversations);
-                }
-            });
 		},
 
 //		contacts
