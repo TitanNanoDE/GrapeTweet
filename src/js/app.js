@@ -1,14 +1,14 @@
 $_('grapeTweet').main(function(){
-  
+
     var App= this;
     var OAuthClient= $('connections').classes.OAuthClient;
     var Socket= $('connections').classes.Socket;
 
     var { Net, Misc, Storage, UI, Audio, Bindings, Initializer } = App.modules;
-  
+
     this.twitterSocket= new OAuthClient('twitter', 'https://api.twitter.com', 'TLeiAYSBAbIKnSWZ9qIg72PLI', 'HTSLlTLxiC1fbLzkxa4D2YaYRxRA58Eor8zGFMQEpRPYou4g2V', { mozSystem : true });
     this.pushServerSocket= new Socket(Socket.HTTP, 'https://grapetweet-titannano.rhcloud.com',  { mozSystem : true });
-	
+
     $$.App= this;
 
     var Defaults = {
@@ -29,6 +29,11 @@ $_('grapeTweet').main(function(){
             record : {}
         },
 
+        Timelines : {
+            name : 'Timelines',
+            record : {}
+        },
+
         PushServer : {
             name : 'PushServer',
 
@@ -37,7 +42,7 @@ $_('grapeTweet').main(function(){
             endpoint : '',
             lastRefresh : 0
         },
-	
+
         DataStatus : {
             name : 'DataStatus',
 
@@ -62,7 +67,7 @@ $_('grapeTweet').main(function(){
     };
 
     this.loadingChunk= false;
-	
+
     this.cache= {
         images : {}
     };
@@ -97,7 +102,7 @@ $_('grapeTweet').main(function(){
 
         $$.console.log('requesting push-endpoint...');
         var endpointRequest= $$.navigator.push.register();
-	
+
         endpointRequest.onsuccess= function(){
             callback(endpointRequest.result);
         };
@@ -132,7 +137,7 @@ $_('grapeTweet').main(function(){
             });
         });
     };
-	
+
     this.updatePushServer= function(force){
         if(!App.PushServer.ready){
             registerPushClient();
@@ -198,32 +203,32 @@ $_('grapeTweet').main(function(){
             $$.console.error(e);
         });
     };
-	
+
 	this.openChat= function(e){
         App.DataStatus.DMs.lastChat= ((e.target) ? e.target.dataset.userId : e);
         App.DataStatus.save();
 
         $$.location.hash= '#!/messages/chat';
 	};
-	
+
 	this.notify= function(conversationId){
         var conversation= App.conversations.record[conversationId];
         var message= conversation.lastMessage;
 
         UI.renderChats(conversationId);
-				
+
         if(message.sender_id != App.Account.userId){
             $$.console.log('display Notification!!');
             UI.renderFooterStatus(App.Account);
             if($$.document.hidden || $$.location.hash.indexOf('/messages') < 0 || ($$.location.hash.indexOf('/chat') > -1 && App.DataStatus.lastChat != message.sender_id)){
                 var textBody= (conversation.unread < 2) ? Misc.cutdown(message.text) : conversation.unread + ' new messages';
-						
+
                 var notification= new $$.Notification(message.sender.name, {
                     body : textBody,
                     tag : message.sender_id,
                     icon : message.sender.profile_image_url
                 });
-		
+
                 notification.addEventListener('click', notificationClick, false);
             }else{
                 Audio.play('recieved');
@@ -233,15 +238,15 @@ $_('grapeTweet').main(function(){
             Audio.play('sent');
         }
 	};
-			
+
 	this.show= function(){
 		if($$.document.hidden){
 			$$.navigator.mozApps.getSelf().onsuccess= function(e){
 				e.target.result.launch();
     		};
-  		}	
+  		}
 	};
-	
+
 	this.createConversation= function(id, lastmessage, unread){
 		return {
 			id : String(id),
@@ -250,7 +255,7 @@ $_('grapeTweet').main(function(){
 			unread : unread
 		};
 	};
-	
+
 	this.integrateIntoMessagesChain= function(message, conversation){
         var self= this;
 		return new $$.Promise(function(done){
@@ -277,7 +282,7 @@ $_('grapeTweet').main(function(){
             if(conversation && conversation.lastMessage != message){
                 message.last= conversation.lastMessage.id_str;
                 message.next= null;
-                        
+
                 conversation.lastMessage= message;
                 if(message.sender_id != App.Account.userId){
                     conversation.unread= (conversation.unread > 0) ? conversation.unread+1 : 1;
@@ -287,7 +292,7 @@ $_('grapeTweet').main(function(){
 
                 App.Conversations.record[conversation.id] = conversation;
                 App.Conversations.save();
-				
+
                 Storage.storeMessage(message).then(function(){
                     Storage.getMessage(message.last).then(function(oldMessage){
                         oldMessage.next= message.id_str;
@@ -304,7 +309,7 @@ $_('grapeTweet').main(function(){
                 var convId= (message.sender_id == App.Account.userId) ? message.recipient_id : message.sender_id;
                 message.last= null;
                 message.next= null;
-	   			
+
                 App.Conversations.record[convId] = App.createConversation(convId, message, (message.sender_id != App.Account.userId) ? 1 : 0);
                 App.Conversations.save();
 
@@ -363,22 +368,29 @@ $_('grapeTweet').main(function(){
             last : null
         };
     };
-  
+
 // 	check the current login
 	Initializer.job('login', function(done){
         var spinner= $('dom').select('.splash .loading');
+
         if(!App.twitterSocket.isLoggedIn()){
             var button= $('dom').select('.splash .signIn');
+
 			App.twitterSocket.requestToken('/oauth/request_token', 'http://grape-tweet.com/callback').then(function(){
+                spinner.classList.add('hidden');
 				$('dom').select('.splash .signIn').classList.remove('hidden');
 			});
-			button.addEventListener('click', function(){
+
+            button.addEventListener('click', function(){
 				App.twitterSocket.authenticate('/oauth/authenticate');
+
                 button.classList.add('hidden');
                 spinner.classList.remove('hidden');
+
 				$$.onOAuthCallback= function(data){
                     delete $$.onOAuthCallback;
                     $$.console.log(data);
+
 					App.twitterSocket.verify('/oauth/access_token', data[1][1]).then(function(userId){
 						App.Account.userId= userId;
                         App.Account.save();
@@ -386,11 +398,13 @@ $_('grapeTweet').main(function(){
 					});
 				};
 			}, false);
-  		}else{
+
+        }else{
+
 			$$.console.timeEnd('checkLogin');
 			done();
-			spinner.classList.remove('hidden');
 		}
+
     }).depends('stores')
 
     .job('stores', function(done){
@@ -426,19 +440,22 @@ $_('grapeTweet').main(function(){
     }).depends('login')
 
     .init().then(function(){
+        var timeline = App.Timelines.record.$home;
 
-        Storage.getTimeline('$home').then(function(timeline){
-            if(!timeline){
-                timeline= App.createTimeline('Home', '$home');
-                Net.fetchNewHomeTweets(timeline).then(function(){
-                    UI.renderTimeline(timeline);
-                    UI.renderTweets(timeline);
-                });
-            }else{
-                UI.renderTimeline(timeline);
+        if(!timeline){
+            App.Timelines.record.$home = timeline= App.createTimeline('Home', '$home');
+            UI.renderTimeline(timeline);
+
+            Net.fetchNewHomeTweets(timeline).then(function(){
                 UI.renderTweets(timeline);
-            }
-        });
+            });
+
+            App.Timelines.save();
+
+        }else{
+            UI.renderTimeline(timeline);
+            UI.renderTweets(timeline);
+        }
 
         UI.renderChats();
         UI.renderContacts();
@@ -449,12 +466,11 @@ $_('grapeTweet').main(function(){
         $('hash').restore();
 
 // 	    everything is done we can open the UI.
-        $('dom').select('.splash .loading').classList.add('hidden');
         $('dom').select('.client').classList.remove('right');
         $('dom').select('head meta[name="theme-color"]').setAttribute('content', '#2196f3');
         $('dom').select('.splash').transition('left').then(function(){
+            $('dom').select('.splash .loading').classList.add('hidden');
             $('dom').select('.splash').classList.add('hidden');
-            $('dom').select('.client').classList.add('searchOpen');
             $$.console.timeEnd('start');
         });
     });
