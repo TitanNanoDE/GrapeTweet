@@ -1,1 +1,0 @@
-$('application').new('grapeTweet');
