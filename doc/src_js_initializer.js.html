@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>GrapeTweet Source: src/js/initializer.js</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
+
+	<link type="text/css" rel="stylesheet" href="styles/site.paper.css">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top navbar-inverse">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">GrapeTweet</a>
+	</div>
+	<div class="navbar-collapse">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="namespaces.list.html" class="dropdown-toggle" data-toggle="dropdown">Namespaces<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="external-af.connections.html">external:af.connections</a></li><li><a href="GrapeTweet.html">GrapeTweet</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="modules.list.html" class="dropdown-toggle" data-toggle="dropdown">Modules<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="GrapeTweet.module_Audio.html">GrapeTweet.Audio</a></li><li><a href="GrapeTweet.module_Bindings.html">GrapeTweet.Bindings</a></li><li><a href="GrapeTweet.module_Cache.html">GrapeTweet.Cache</a></li><li><a href="GrapeTweet.module_Gestures.html">GrapeTweet.Gestures</a></li><li><a href="GrapeTweet.module_Initializer.html">GrapeTweet.Initializer</a></li><li><a href="GrapeTweet.module_Misc.html">GrapeTweet.Misc</a></li><li><a href="GrapeTweet.module_Net.html">GrapeTweet.Net</a></li><li><a href="GrapeTweet.module_Storage.html">GrapeTweet.Storage</a></li><li><a href="GrapeTweet.module_UI.html">GrapeTweet.UI</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Conversation.html">Conversation</a></li><li><a href="GrapeTweet.module_Initializer-Catalog.html">GrapeTweet.Initializer~Catalog</a></li><li><a href="GrapeTweet.module_Initializer-TailTip.html">GrapeTweet.Initializer~TailTip</a></li><li><a href="Promise.html">Promise</a></li><li><a href="Timeline.html">Timeline</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="global.html" class="dropdown-toggle" data-toggle="dropdown">Global<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="global.html">Global</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="externals.list.html" class="dropdown-toggle" data-toggle="dropdown">Externals<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="external-af.html">af</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+	</div>
+</div>
+</div>
+
+
+<div class="container">
+<div class="row">
+
+	
+	<div class="col-md-12">
+	
+		<div id="main">
+    		<h1 class="page-title">Source: src/js/initializer.js</h1>
+			
+
+		<h1 class="page-title">Source: src/js/initializer.js</h1>
+    
+<section>
+	<article>
+		<pre
+			class="sunlight-highlight-javascript linenums">/**
+ * @module Initializer
+ * @author Jovan Gerodetti &lt;jovan@titannano.de>
+ * @copyright TitanNano.de 2015
+ * @memberof GrapeTweet
+ */
+
+$_('grapeTweet').module('Initializer', [], function(App, done){
+
+    /**
+     * @class
+     * @memberof GrapeTweet.module:Initializer
+     * @inner
+     */
+    var Catalog= function(){
+        this._listeners= [];
+    };
+
+    /**
+     * @memberof GrapeTweet.module:Initializer~Catalog
+     */
+    Catalog.checkListeners= function(){
+        var object= this;
+        this._listeners.forEach(function(item){
+            if(item.event == 'available'){
+                var ready= 0;
+                item.listener.forEach(function(item){
+                    if(Object.keys(object).indexOf(item) > -1)
+                        ready++;
+                });
+
+                if(ready == item.listener.length){
+                    item.success();
+                }
+            }
+        });
+    };
+
+    /**
+     * @memberof GrapeTweet.module:Initializer~Catalog.prototype
+     */
+    Catalog.prototype.on= function(event, listener){
+        var self= this;
+        return new $$.Promise(function(success){
+            self._listeners.push({ event : event, listener : listener, success : success });
+            Catalog.checkListeners.apply(self);
+        });
+    };
+
+    /**
+     * @memberof GrapeTweet.module:Initializer~Catalog.prototype
+     */
+    Catalog.prototype.add= function(key, value){
+        this[key]= value;
+        Catalog.checkListeners.apply(this);
+    };
+
+    /**
+     * @memberof GrapeTweet.module:Initializer
+     * @inner
+     */
+    var jobs= {};
+
+    /**
+     * @memberof GrapeTweet.module:Initializer
+     * @inner
+     */
+    var finishedJobs= new Catalog();
+
+    /**
+     * @const
+     * @memberof GrapeTweet.module:Initializer
+     * @inner
+     */
+    const LOG= true;
+
+    /**
+     * @class TailTip
+     * @memberof GrapeTweet.module:Initializer
+     * @inner
+     */
+
+    var Interface= {
+        /**
+         * Adds a new job to the bootstrapping process
+         *
+         * @param {string} name
+         * @param {function} job
+         * @returns {GrapeTweet.module:Initializer~TailTip}
+         * @memberof GrapeTweet.module:Initializer
+         */
+        job : function(name, job){
+            if(name in jobs){
+                $$.console.error('initializor job "'+name+'" already exists!');
+                return {};
+            }
+
+            jobs[name]= {
+                job : job,
+                dependencies : []
+            };
+
+            return {
+                /**
+                 * Defines the dependencies for the last job.
+                 * @param {...string} job
+                 * @returns {GrapeTweet.module:Initializer}
+                 * @memberof GrapeTweet.module:Initializer~TailTip
+                 */
+                depends : function(){
+                    jobs[name].dependencies= $$.Array.prototype.map.apply(arguments, [function(item){ return item; }]);
+                    return Interface;
+                },
+
+                /**
+                 * @function job
+                 * @see GrapeTweet.module:Initializer.job
+                 * @memberof GrapeTweet.module:Initializer~TailTip
+                 */
+                job : Interface.job,
+
+                /**
+                 * @function init
+                 * @see GrapeTweet.module:Initializer
+                 * @memberof GrapeTweet.module:Initializer~TailTip
+                 */
+                init : Interface.init
+            };
+        },
+
+        /**
+         * Starts the bootstrapping process
+         *
+         * @returns {Promise}
+         * @memberof GrapeTweet.module:Initializer
+         */
+        init : function(){
+            if(LOG) $$.console.time('init');
+            jobs= Object.keys(jobs).map(function(key){
+                var item= jobs[key];
+
+                return new $$.Promise(function(done){
+                    var ready= function(){
+                        if(LOG) $$.console.timeEnd(key);
+                        finishedJobs.add(key, true);
+                        done();
+                    };
+
+                    if(!item.dependencies.length){
+                        if(LOG) $$.console.time(key);
+                        item.job(ready);
+                    }else{
+                        finishedJobs.on('available', item.dependencies).then(function(){
+                            if(LOG) $$.console.time(key);
+                            item.job(ready);
+                        });
+                    }
+                });
+            });
+
+            return $$.Promise.all(jobs).then(function(){
+                if(LOG) $$.console.timeEnd('init');
+            });
+        }
+    };
+
+    done(Interface);
+});
+</pre>
+	</article>
+</section>
+
+
+
+
+
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+
+</div>
+</div>
+
+
+<footer>
+
+
+	<span class="copyright">
+	DocStrap Copyright © 2012-2014 The contributors to the JSDoc3 and DocStrap projects.
+	</span>
+	<br />
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0-dev</a>
+	on Sat Oct 31st 2015 using the <a
+	href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
+</span>
+</footer>
+
+<!--<script src="scripts/sunlight.js"></script>-->
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/bootstrap-dropdown.js"></script>
+<script src="scripts/toc.js"></script>
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			return $( heading ).attr( "id" ) || ( prefix + i );
+		},
+		selectors   : "h1,h2,h3,h4",
+		showAndHide : false,
+		scrollTo    : "100px"
+	} );
+
+	$( "#toc>ul" ).addClass( "nav nav-pills nav-stacked" );
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+	//			$( ".tutorial-section pre, .readme-section pre" ).addClass( "sunlight-highlight-javascript" ).addClass( "linenums" );
+
+	$( ".tutorial-section pre, .readme-section pre" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			lang = "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( "sunlight-highlight-" + lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	Sunlight.highlightAll( {
+		lineNumbers : true,
+		showMenu : true,
+		enableDoclinks : true
+	} );
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+</body>
+</html>

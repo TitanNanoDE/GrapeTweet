@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>GrapeTweet Source: src/js/gestures.js</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
+
+	<link type="text/css" rel="stylesheet" href="styles/site.paper.css">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top navbar-inverse">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">GrapeTweet</a>
+	</div>
+	<div class="navbar-collapse">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="namespaces.list.html" class="dropdown-toggle" data-toggle="dropdown">Namespaces<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="external-af.connections.html">external:af.connections</a></li><li><a href="GrapeTweet.html">GrapeTweet</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="modules.list.html" class="dropdown-toggle" data-toggle="dropdown">Modules<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="GrapeTweet.module_Audio.html">GrapeTweet.Audio</a></li><li><a href="GrapeTweet.module_Bindings.html">GrapeTweet.Bindings</a></li><li><a href="GrapeTweet.module_Cache.html">GrapeTweet.Cache</a></li><li><a href="GrapeTweet.module_Gestures.html">GrapeTweet.Gestures</a></li><li><a href="GrapeTweet.module_Initializer.html">GrapeTweet.Initializer</a></li><li><a href="GrapeTweet.module_Misc.html">GrapeTweet.Misc</a></li><li><a href="GrapeTweet.module_Net.html">GrapeTweet.Net</a></li><li><a href="GrapeTweet.module_Storage.html">GrapeTweet.Storage</a></li><li><a href="GrapeTweet.module_UI.html">GrapeTweet.UI</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Conversation.html">Conversation</a></li><li><a href="GrapeTweet.module_Initializer-Catalog.html">GrapeTweet.Initializer~Catalog</a></li><li><a href="GrapeTweet.module_Initializer-TailTip.html">GrapeTweet.Initializer~TailTip</a></li><li><a href="Promise.html">Promise</a></li><li><a href="Timeline.html">Timeline</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="global.html" class="dropdown-toggle" data-toggle="dropdown">Global<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="global.html">Global</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="externals.list.html" class="dropdown-toggle" data-toggle="dropdown">Externals<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="external-af.html">af</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+	</div>
+</div>
+</div>
+
+
+<div class="container">
+<div class="row">
+
+	
+	<div class="col-md-12">
+	
+		<div id="main">
+    		<h1 class="page-title">Source: src/js/gestures.js</h1>
+			
+
+		<h1 class="page-title">Source: src/js/gestures.js</h1>
+    
+<section>
+	<article>
+		<pre
+			class="sunlight-highlight-javascript linenums">/**
+ * @module Gestures
+ * @author Jovan Gerodetti &lt;jovan@titannano.de>
+ * @copyright TitnaNano.de 2015
+ * @memberof GrapeTweet
+ */
+
+$_('grapeTweet').module('Gestures', ['Net', 'Misc'], function(App, ready){
+
+	var { Net, Misc } = App.modules;
+
+	/**
+	 * @type {object}
+	 * @property {object} metaData
+	 * @property {?Node} metaData.rget
+	 * @property {?Node} metaData.element
+	 * @property {?timeline} metaData.timeline
+	 * @property {enabled} metaData.enabled
+	 * @property {number} metaData.start
+	 * @property {?Touch} metaData.touch
+	 * @property {boolean} metaData.open
+	 * @property {GrapeTweet.module:Gestures~PullDownToRefresh/release}
+	 * @property {GrapeTweet.module:Gestures~PullDownToRefresh/bind}
+	 * @property {GrapeTweet.module:Gestures~PullDownToRefresh/listener}
+	 * @memberof GrapeTweet.module:Gestures
+	 * @inner
+	 */
+	var PullDownToRefresh = {
+
+		metaData : {
+			target : null,
+			element : null,
+			timeline : null,
+			enabled: false,
+			start : 0,
+			touch : null,
+			open : false
+		},
+
+		/**
+		 * @function PullDownToRefresh/release
+		 * @listens touchend
+		 * @param {Event} e
+		 * @memberof GrapeTweet.module:Gestures
+		 * @inner
+		 */
+		release : function(e){
+			if(this.enabled &amp;&amp; (!e || e.touches.indexOf(this.touch) &lt; 0)){
+				var state= parseInt(this.element.style.getPropertyValue('transform').replace(/translateY\(/, '').replace(/px\)/, ''));
+				if(state > 37){
+					this.element.classList.add('open');
+					this.element.textContent= 'checking for new Tweets...';
+					this.open= true;
+					var data= this;
+					Net.fetchNewHomeTweets(this.timeline).then(function(){
+						this.ui.renderTweets(data.timeline).then(function(){
+							data.element.classList.add('closed');
+							data.element.classList.remove('open');
+							data.element.textContent= "release to check for new Tweets";
+							data.open= false;
+						});
+					}, function(){
+						data.element.textContent= 'ratelimit exceed, try again later.';
+						$$.setTimeout(function(){
+							data.element.classList.add('closed');
+							data.element.classList.remove('open');
+							data.element.textContent= "release to check for new Tweets";
+							data.open= false;
+						}, 10000);
+					});
+				}else{
+					this.element.classList.add('closed');
+				}
+				this.start= 0;
+				this.enabled= false;
+				this.element.style.setProperty('transform', '');
+			}
+		},
+
+		/**
+		 * Binds this gesture to the given element
+		 *
+		 * @function PullDownToRefresh/bind
+		 * @param {Node} element
+		 * @param {Timeline} timeline
+		 * @param {GrapeTweet.module:UI} UI
+		 * @returns	{null}
+		 * @memberof GrapeTweet.module:Gestures
+		 * @inner
+		 */
+		bind : function(element, timeline, UI) {
+			var metaData = Misc.objectApply(Object.create(PullDownToRefresh.metaData), {
+				target : element,
+				element : element.querySelector('.check-new'),
+				timeline : timeline,
+				ui : UI
+			});
+
+			return element.addEventListener('touchmove', Misc.throttle(PullDownToRefresh.listener, 100).bind(metaData));
+		},
+
+		/**
+		 * Main listener for the move event
+		 *
+		 * @function PullDownToRefresh/listener
+		 * @param {Event} e
+		 * @listens touchmove
+		 * @memberof GrapeTweet.module:Gestures
+		 * @inner
+		 */
+		listener : function (e){
+			if((this.enabled || this.target.scrollTop === 0) &amp;&amp; !this.open){
+				if(!this.enabled){
+					this.touch= e.touches.indexOf(e.changedTouches[0]);
+					this.start= e.touches[this.touch].screenY;
+					this.enabled= true;
+					this.target.addEventListener('touchend', this.release.bind(this));
+					this.element.classList.remove('closed');
+				}else{
+					e.preventDefault();
+					var force= e.touches[this.touch].screenY - this.start;
+					var y= (force / 5);
+					if(y &lt; 76){
+						this.element.style.setProperty('transform', 'translateY(' + y + 'px)');
+					}else{
+						PullDownToRefresh.release.apply(this);
+					}
+				}
+			}
+		}
+
+	};
+
+	ready({
+		PullDownToRefresh : PullDownToRefresh.bind
+	});
+
+});
+</pre>
+	</article>
+</section>
+
+
+
+
+
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+
+</div>
+</div>
+
+
+<footer>
+
+
+	<span class="copyright">
+	DocStrap Copyright © 2012-2014 The contributors to the JSDoc3 and DocStrap projects.
+	</span>
+	<br />
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0-dev</a>
+	on Sat Oct 31st 2015 using the <a
+	href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
+</span>
+</footer>
+
+<!--<script src="scripts/sunlight.js"></script>-->
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/bootstrap-dropdown.js"></script>
+<script src="scripts/toc.js"></script>
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			return $( heading ).attr( "id" ) || ( prefix + i );
+		},
+		selectors   : "h1,h2,h3,h4",
+		showAndHide : false,
+		scrollTo    : "100px"
+	} );
+
+	$( "#toc>ul" ).addClass( "nav nav-pills nav-stacked" );
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+	//			$( ".tutorial-section pre, .readme-section pre" ).addClass( "sunlight-highlight-javascript" ).addClass( "linenums" );
+
+	$( ".tutorial-section pre, .readme-section pre" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			lang = "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( "sunlight-highlight-" + lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	Sunlight.highlightAll( {
+		lineNumbers : true,
+		showMenu : true,
+		enableDoclinks : true
+	} );
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+</body>
+</html>

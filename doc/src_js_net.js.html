@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>GrapeTweet Source: src/js/net.js</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
+
+	<link type="text/css" rel="stylesheet" href="styles/site.paper.css">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top navbar-inverse">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">GrapeTweet</a>
+	</div>
+	<div class="navbar-collapse">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="namespaces.list.html" class="dropdown-toggle" data-toggle="dropdown">Namespaces<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="external-af.connections.html">external:af.connections</a></li><li><a href="GrapeTweet.html">GrapeTweet</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="modules.list.html" class="dropdown-toggle" data-toggle="dropdown">Modules<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="GrapeTweet.module_Audio.html">GrapeTweet.Audio</a></li><li><a href="GrapeTweet.module_Bindings.html">GrapeTweet.Bindings</a></li><li><a href="GrapeTweet.module_Cache.html">GrapeTweet.Cache</a></li><li><a href="GrapeTweet.module_Gestures.html">GrapeTweet.Gestures</a></li><li><a href="GrapeTweet.module_Initializer.html">GrapeTweet.Initializer</a></li><li><a href="GrapeTweet.module_Misc.html">GrapeTweet.Misc</a></li><li><a href="GrapeTweet.module_Net.html">GrapeTweet.Net</a></li><li><a href="GrapeTweet.module_Storage.html">GrapeTweet.Storage</a></li><li><a href="GrapeTweet.module_UI.html">GrapeTweet.UI</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Conversation.html">Conversation</a></li><li><a href="GrapeTweet.module_Initializer-Catalog.html">GrapeTweet.Initializer~Catalog</a></li><li><a href="GrapeTweet.module_Initializer-TailTip.html">GrapeTweet.Initializer~TailTip</a></li><li><a href="Promise.html">Promise</a></li><li><a href="Timeline.html">Timeline</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="global.html" class="dropdown-toggle" data-toggle="dropdown">Global<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="global.html">Global</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="externals.list.html" class="dropdown-toggle" data-toggle="dropdown">Externals<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="external-af.html">af</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+	</div>
+</div>
+</div>
+
+
+<div class="container">
+<div class="row">
+
+	
+	<div class="col-md-12">
+	
+		<div id="main">
+    		<h1 class="page-title">Source: src/js/net.js</h1>
+			
+
+		<h1 class="page-title">Source: src/js/net.js</h1>
+    
+<section>
+	<article>
+		<pre
+			class="sunlight-highlight-javascript linenums">/**
+ * @module Net
+ * @author Jovan Gerodetti &lt;jovan@titannano.de>
+ * @copyright TitanNano.de 2015
+ * @memberof GrapeTweet
+ */
+
+$_('grapeTweet').module('Net', ['Misc', 'Storage'], function(App, done){
+
+    var AsyncLoop= $('classes').AsyncLoop;
+
+    var { Misc, Storage } = App.modules;
+
+    var Interface= {
+
+        /**
+         * Download existing direct messages.
+         *
+         * @return {Promise}
+         * @memberof GrapeTweet.module:Net
+         */
+        downloadDirectMessages : function(){
+            return new $$.Promise(function(done){
+                var max_id_in= 0;
+                var max_id_out= 0;
+                var conversations= {};
+
+                var loopIn= new AsyncLoop(function(next, exit){
+                    var request= null;
+
+                if(max_id_in === 0)
+                    request= App.twitterSocket.get('/1.1/direct_messages.json', { count : 200 });
+                else
+                    request= App.twitterSocket.get('/1.1/direct_messages.json', { max_id : max_id_in, count : 200 });
+
+                    request.then(function(data){
+                        data= $$.JSON.parse(data);
+
+						if(max_id_in !== 0)
+							data.shift();
+
+						if(data.length === 0)
+							return exit();
+
+						data.forEach(function(item){
+							delete item.recipient;
+
+							if(App.DataStatus.DMs.lastIn === ''){
+								App.DataStatus.DMs.lastIn= item.id_str;
+                                App.DataStatus.save();
+							}
+
+							conversations[item.sender_id]= conversations[item.sender_id] || [];
+							conversations[item.sender_id].push(item);
+
+
+							max_id_in= item.id_str;
+						});
+
+						next();
+					});
+
+					request.catch(exit);
+				});
+
+				var loopOut= new AsyncLoop(function(next, exit){
+					var request= null;
+
+					if(max_id_out === 0)
+						request= App.twitterSocket.get('/1.1/direct_messages/sent.json', { count : 200 });
+					else
+						request= App.twitterSocket.get('/1.1/direct_messages/sent.json', { max_id : max_id_out, count : 200 });
+
+					request.then(function(data){
+						data= $$.JSON.parse(data);
+
+						if(max_id_out !== 0)
+							data.shift();
+
+						if(data.length === 0)
+							return exit();
+
+						data.forEach(function(item){
+							delete item.sender;
+
+							if(App.DataStatus.DMs.lastOut === ''){
+								App.DataStatus.DMs.lastOut= item.id_str;
+                                App.DataStatus.save();
+							}
+
+							conversations[item.recipient_id]= conversations[item.recipient_id] || [];
+							conversations[item.recipient_id].push(item);
+
+							max_id_out= item.id_str;
+						});
+
+						next();
+					});
+
+					request.catch(exit);
+				});
+
+				$$.Promise.all([loopIn.incalculable(), loopOut.incalculable()]).then(function(){
+
+                    $$.Object.keys(conversations).forEach(function(key){
+						conversations[key].sort(Misc.sortByDate);
+
+						conversations[key].forEach(function(message, index){
+							message.last= (index-1 > -1) ? conversations[key][index-1].id_str : null;
+							message.next= (index+1 &lt; conversations[key].length) ? conversations[key][index+1].id_str : null;
+							Storage.storeMessage(message).catch($$.console.log);
+						});
+
+						App.Conversations.record[key]= App.createConversation(key, conversations[key].last(), 0);
+					});
+
+                    App.Conversations.save();
+
+					done();
+				});
+			});
+		},
+
+        /**
+         * Fetches the new direct messages.
+         *
+         * @return {Promise}
+         * @memberof GrapeTweet.module:Net
+         */
+		fetchNewMessages : function(){
+			return new Promise(function(){
+				var messagesIn= [];
+				var messagesOut= [];
+
+				var loopIn= new AsyncLoop(function(next, exit){
+					var request= App.twitterSocket.get('/1.1/direct_messages.json', { since_id : App.DataStatus.DMs.lastIn, count : 200 });
+
+					request.then(function(data){
+						data= $$.JSON.parse(data);
+
+						if(data.length === 0)
+							return exit();
+
+						data.forEach(function(item){
+							delete item.recipient;
+							messagesIn.push(item);
+						});
+
+                        App.DataStatus.DMs.lastIn= messagesIn.last().id_str;
+
+						next();
+					});
+
+					request.catch(exit);
+				});
+
+				var loopOut= new AsyncLoop(function(next, exit){
+					var request= App.twitterSocket.get('/1.1/direct_messages/sent.json', { since_id : App.DataStatus.DMs.lastOut, count : 200 });
+
+					request.then(function(data){
+						data= $$.JSON.parse(data);
+
+						if(data.length === 0)
+							return exit();
+
+						data.forEach(function(item){
+							delete item.sender;
+							messagesOut.push(item);
+						});
+
+                        App.DataStatus.DMs.lastOut= messagesOut.last().id_str;
+
+						next();
+					});
+
+					request.catch(exit);
+				});
+
+				$$.Promise.all([loopIn.incalculable(), loopOut.incalculable()]).then(function(){
+					var queue= [];
+
+					messagesIn.concat(messagesOut).sort(Misc.sortByDate).forEach(function(message){
+						var convId= (message.sender_id != App.Account.userId ? message.sender_id : message.recipient_id);
+						Storage.getConversation(convId).then(function(conversation){
+							queue.push(App.integrateIntoMessagesChain(message, conversation));
+						});
+					});
+
+					$$.Promise.all(queue).then(done);
+				});
+			});
+		},
+
+        /**
+         * Synchonizes contacts
+         *
+         * @return {Promise}
+         * @memberof GrapeTweet.module:Net
+         */
+		syncContacts : function(){
+    		return new $$.Promise(function(success){
+				var following= App.DataStatus.contacts.followingCache;
+				var follower= App.DataStatus.contacts.followerCache;
+				var contactsList= App.DataStatus.contacts.contactsCache;
+
+				var followerLoop= new AsyncLoop(function(next, exit){
+                    var request= null;
+
+					if(App.DataStatus.contacts.nextFollowerCursor != '0')
+				        request= App.twitterSocket.get('/1.1/followers/ids.json', { user_id : App.Account.userId, cursor : App.DataStatus.contacts.nextFollowerCursor });
+					else{
+						return exit();
+					}
+
+					request.then(function(data){
+						data= $$.JSON.parse(data);
+
+						follower= follower.concat(data.ids);
+						App.DataStatus.contacts.nextFollowerCursor= data.next_cursor;
+                        App.DataStatus.save();
+						return next();
+					});
+
+					request.catch(function(e){
+						App.DataStatus.contacts.followerCache= follower;
+                        App.DataStatus.save();
+
+						var timeout= ($$.parseInt(e.nextTry) * 1000) - $$.Date.now();
+						$$.setTimeout(function(){ Interface.syncContacts(); }, timeout);
+
+						return exit();
+					});
+				});
+
+				var followingLoop= new AsyncLoop(function(next, exit){
+					var request= null;
+
+                    if(App.DataStatus.contacts.nextFollowingCursor != '0')
+						request= App.twitterSocket.get('/1.1/friends/ids.json', { user_id : App.Account.userId, cursor : App.DataStatus.contacts.nextFollowingCursor });
+					else{
+						return exit();
+					}
+
+					request.then(function(data){
+						data= $$.JSON.parse(data);
+
+						following= following.concat(data.ids);
+						App.DataStatus.contacts.nextFollowingCursor= data.next_cursor;
+                        App.DataStatus.save();
+
+						next();
+					});
+
+					request.catch(function(e){
+						App.objectReplace(App.DataStatus, {
+							contacts : {
+								followingCache : follower
+							}
+						});
+
+                        App.DataStatus.contacts.followingCache= follower;
+                        App.DataStatus.save();
+
+						var timeout= ($$.parseInt(e.nextTry) * 1000) - $$.Date.now();
+						$$.setTimeout(function(){ Interface.syncContacts(); }, timeout);
+
+                        exit();
+					});
+				});
+
+				var userInfoLoop= new AsyncLoop(function(next, exit){
+					var list= null;
+
+					if(contactsList.length > 0){
+
+						App.DataStatus.contacts.fetchingInfo= true;
+                        App.DataStatus.save();
+
+						if(contactsList.length > 100){
+							list= [];
+							for(var i= 0; i &lt;= 100; i++){
+								list.push(contactsList.shift());
+							}
+						}else{
+							list= contactsList;
+							contactsList= [];
+						}
+
+						var request= App.twitterSocket.get('/1.1/users/lookup.json', { user_id : list.join(','), include_entities : false });
+
+						request.then(function(contactsRaw){
+							var contacts= {};
+
+                            $$.JSON.parse(contactsRaw).forEach(function(item){
+                                contacts[item.id_str]= item;
+                            });
+
+							App.Contacts.record= contacts;
+                            App.Contacts.save();
+
+							next();
+						});
+
+						request.catch(function(e){
+							App.DataStatus.contacts.contactsCache= contactsList;
+                            App.DataStatus.save();
+
+							var timeout= ($$.parseInt(e.nextTry) * 1000) - $$.Date.now();
+							$$.setTimeout(function(){ Interface.syncContacts(); }, timeout);
+
+                            exit();
+						});
+					}else{
+						App.DataStatus.contacts.fetchingInfo= false;
+                        App.DataStatus.save();
+
+						return exit();
+					}
+				});
+
+				var scheduleNext= function(){
+					$$.setTimeout(function(){ Interface.syncContacts(); }, untilNextSync);
+
+					untilNextSync= Math.round(untilNextSync / 1000);
+					if(untilNextSync &lt; 60)
+						untilNextSync= untilNextSync + ' seconds';
+					else
+						untilNextSync= Math.round(untilNextSync / 60) + ' minutes';
+
+					$$.console.log('contacts are synchronized again in ' + untilNextSync + '!');
+                    success();
+				};
+
+				var timeout= Date.now() - App.DataStatus.contacts.lastSync;
+				var untilNextSync= 1800000 - timeout;
+				untilNextSync= ((untilNextSync > 0) ? untilNextSync : 1800000);
+
+//				only sync every 30 minutes
+				if( timeout >  1800000 || App.DataStatus.contacts.fetchingInfo || App.DataStatus.contacts.nextFollowerCursor != '-1'){
+
+//					start or continue fetching contacts ids unless we have pending contact info requests
+					if(!App.DataStatus.contacts.fetchingInfo){
+						$$.Promise.all([followerLoop.incalculable(), followingLoop.incalculable()]).then(function(){
+
+//							check if download is complete
+							if(App.DataStatus.contacts.nextFollowingCursor == '0' &amp;&amp; App.DataStatus.contacts.nextFollowerCursor == '0'){
+								App.DataStatus.contacts.nextFollowingCursor= '-1';
+								App.DataStatus.contacts.nextFollowerCursor= '-1';
+								App.DataStatus.contacts.lastSync= $$.Date.now();
+
+                                App.DataStatus.save();
+							}
+
+//      					isolating contacts
+							if(following.length == Math.min(following.length, follower.length)){
+								following.forEach(function(item){
+									if(follower.indexOf(item) > -1)
+										contactsList.push(item);
+								});
+							}else{
+								follower.forEach(function(item){
+									if(following.indexOf(item) > -1)
+										contactsList.push(item);
+								});
+							}
+
+							userInfoLoop.incalculable().then(scheduleNext);
+						});
+					}else{
+						userInfoLoop.incalculable().then(scheduleNext);
+					}
+					$$.console.log('contacts just synced!');
+				}else{
+					scheduleNext();
+				}
+			});
+		},
+
+        /**
+         * downloades an image from Twitter
+         *
+         * @param {URL} url
+         * @returns {Promise}
+         * @memberof GrapeTweet.module:Net
+         */
+		downloadImage : function(url){
+			return new $$.Promise(function(done){
+                App.twitterSocket.download(url, true).then(function(blob){
+                    var blob_url= $$.URL.createObjectURL(blob);
+                    done({ url : blob_url, blob : blob });
+                });
+			});
+		},
+
+        /**
+         * sends a text message to Twitter
+         *
+         * @param {string} text
+         * @returns {Promise}
+         * @memberof GrapeTweet.module:Net
+         */
+		sendDirectMessage : function(text){
+			return new $$.Promise(function(done){
+				var request= App.twitterSocket.request('/1.1/direct_messages/new.json', { user_id : App.DataStatus.DMs.lastChat, text : text });
+
+				$$.Promise.all([request, Storage.getConversation(App.DataStatus.DMs.lastChat)]).then(function(values){
+					var message= $$.JSON.parse(values[0]);
+					var conversation= values[1];
+
+					message.placeholder= true;
+
+					App.integrateIntoMessagesChain(message, conversation).then(done);
+				});
+				request.catch(function(e){
+					$$.console.error(e);
+				});
+			});
+		},
+
+        /**
+         * Uploads a media file to Twitter.
+         *
+         * @param {Blob} blob
+         * @param {boolean} direct_message
+         * @param {function} onprogress
+         * @return {Promise}
+         * @memberof GrapeTweet.module:Net
+         */
+		uploadMedia : function(blob, direct_message, onprogress){
+			return new $$.Promise(function(done){
+				App.twitterSocket.upload('https://upload.twitter.com/1.1/media/upload.json', blob, onprogress, true).then(function(data){
+					var media_id= JSON.parse(data).media_id_string;
+					data= {
+						user_id : App.DataStatus.DMs.lastChat,
+						include_entities : '1',
+						include_user_entities: '1',
+						send_error_codes :'1'
+					};
+
+					if(direct_message){
+						data.text= '';
+						data.media_id= media_id;
+					}else{
+						data.status= '';
+						data.media_ids= media_id;
+					}
+
+					var request= App.twitterSocket.request((direct_message ? '/1.1/direct_messages/new.json' : '/1.1/statuses/update.json'), data);
+
+					$$.Promise.all([request, Storage.getConversation(App.DataStatus.DMs.lastChat)]).then(function(values){
+						if(direct_message){
+							var message= $$.JSON.parse(values[0]);
+							var conversation= values[1];
+							message.placeholder= true;
+
+							App.integrateIntoMessagesChain(message, conversation).then(done);
+						}else{
+							done();
+						}
+					});
+
+					request.catch(function(e){
+						$$.console.log(e);
+					});
+				}, function(e){
+					$$.console.error(e);
+				});
+			});
+		},
+
+        /**
+         * Fetches new tweets for the given timeline
+         *
+         * @param {Timeline} Timeline
+         * @returns {Promise}
+         * @memberof GrapeTweet.module:Net
+         */
+		fetchNewHomeTweets : function(timeline){
+			return new $$.Promise(function(done, error){
+                var data= { count : 100 };
+                if(timeline.last) data.since_id= timeline.last;
+				App.twitterSocket.get('/1.1/statuses/home_timeline.json', data).then(function(tweets){
+					tweets= $$.JSON.parse(tweets).reverse();
+                    tweets.forEach(function(item){
+                        App.integrateIntoTimeline(item, timeline);
+                    });
+					done();
+				},
+                function(e){
+                    $$.console.error(e);
+                    error();
+                });
+			});
+		},
+
+        /**
+         * Fetches all messages from the push server.
+         *
+         * @returns {Promise}
+         * @memberof GrapeTweet.module:Net
+         */
+        pullPushMessages : function(){
+            return App.pushServerSocket.request('/pull', $$.JSON.stringify({ id : App.PushServer.id }));
+        }
+	};
+
+    done(Interface);
+});
+</pre>
+	</article>
+</section>
+
+
+
+
+
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+
+</div>
+</div>
+
+
+<footer>
+
+
+	<span class="copyright">
+	DocStrap Copyright © 2012-2014 The contributors to the JSDoc3 and DocStrap projects.
+	</span>
+	<br />
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0-dev</a>
+	on Sat Oct 31st 2015 using the <a
+	href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
+</span>
+</footer>
+
+<!--<script src="scripts/sunlight.js"></script>-->
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/bootstrap-dropdown.js"></script>
+<script src="scripts/toc.js"></script>
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			return $( heading ).attr( "id" ) || ( prefix + i );
+		},
+		selectors   : "h1,h2,h3,h4",
+		showAndHide : false,
+		scrollTo    : "100px"
+	} );
+
+	$( "#toc>ul" ).addClass( "nav nav-pills nav-stacked" );
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+	//			$( ".tutorial-section pre, .readme-section pre" ).addClass( "sunlight-highlight-javascript" ).addClass( "linenums" );
+
+	$( ".tutorial-section pre, .readme-section pre" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			lang = "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( "sunlight-highlight-" + lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	Sunlight.highlightAll( {
+		lineNumbers : true,
+		showMenu : true,
+		enableDoclinks : true
+	} );
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+</body>
+</html>
