@@ -72,7 +72,6 @@
 	<div class="col-md-12">
 	
 		<div id="main">
-    		<h1 class="page-title">Source: src/js/app.js</h1>
 			
 
 		<h1 class="page-title">Source: src/js/app.js</h1>
@@ -83,7 +82,7 @@
 			class="sunlight-highlight-javascript linenums">/**
  *
  * @namespace GrapeTweet
- * @author Jovan Gerodetti
+ * @author Jovan Gerodetti &lt;jovan@titannano.de>
  */
 
 $_('grapeTweet').main(function(){
@@ -762,7 +761,8 @@ $( function () {
 
 	$( "#toc" ).toc( {
 		anchorName  : function ( i, heading, prefix ) {
-			return $( heading ).attr( "id" ) || ( prefix + i );
+			var id = $( heading ).attr( "id" );
+			return id && id.replace(/\~/g, '-inner-').replace(/\./g, '-static-') || ( prefix + i );
 		},
 		selectors   : "h1,h2,h3,h4",
 		showAndHide : false,

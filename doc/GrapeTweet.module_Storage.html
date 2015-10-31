@@ -72,10 +72,11 @@
 	<div class="col-md-8">
 	
 		<div id="main">
-    		<h1 class="page-title">Module: Storage</h1>
 			
 
-	<h1 class="page-title">Module: Storage</h1>
+    
+        <h1 class="page-title">Module: Storage</h1>
+    
 <section>
 
 <header>
@@ -171,6 +172,7 @@
 
         <dl>
             
+<hr>
 <dt class="name" id="~caches">
     <h4><span class="type-signature">&lt;inner> </span>caches<span class="type-signature"> :object</span></h4>
 
@@ -321,6 +323,7 @@
 
         
             
+<hr>
 <dt class="name" id="~db">
     <h4><span class="type-signature">&lt;inner> </span>db<span class="type-signature"> :IndexedDB</span></h4>
 
@@ -396,6 +399,7 @@
 
         
             
+<hr>
 <dt class="name" id="~listeners">
     <h4><span class="type-signature">&lt;inner> </span>listeners<span class="type-signature"> :object</span></h4>
 
@@ -575,6 +579,7 @@
 
         <dl>
             
+<hr>
 <dt>
     <h4 class="name" id="~listeners/add"><span class="type-signature">&lt;inner> </span>listeners/add<span class="signature">(id, type, callback)</span><span class="type-signature"></span></h4>
     
@@ -757,6 +762,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id="~listeners/collect"><span class="type-signature">&lt;inner> </span>listeners/collect<span class="signature">(type, id)</span><span class="type-signature"> &rarr; {Array.&lt;function()>}</span></h4>
     
@@ -991,7 +997,8 @@ $( function () {
 
 	$( "#toc" ).toc( {
 		anchorName  : function ( i, heading, prefix ) {
-			return $( heading ).attr( "id" ) || ( prefix + i );
+			var id = $( heading ).attr( "id" );
+			return id && id.replace(/\~/g, '-inner-').replace(/\./g, '-static-') || ( prefix + i );
 		},
 		selectors   : "h1,h2,h3,h4",
 		showAndHide : false,

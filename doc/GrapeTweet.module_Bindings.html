@@ -72,10 +72,11 @@
 	<div class="col-md-8">
 	
 		<div id="main">
-    		<h1 class="page-title">Module: Bindings</h1>
 			
 
-	<h1 class="page-title">Module: Bindings</h1>
+    
+        <h1 class="page-title">Module: Bindings</h1>
+    
 <section>
 
 <header>
@@ -171,6 +172,7 @@
 
         <dl>
             
+<hr>
 <dt class="name" id=".keyboard">
     <h4><span class="type-signature">&lt;static> </span>keyboard<span class="type-signature"> :boolean</span></h4>
 
@@ -252,6 +254,7 @@
 
         <dl>
             
+<hr>
 <dt>
     <h4 class="name" id=".keepKeyboardOpen"><span class="type-signature">&lt;static> </span>keepKeyboardOpen<span class="signature">(e)</span><span class="type-signature"></span></h4>
     
@@ -393,6 +396,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".messages"><span class="type-signature">&lt;static> </span>messages<span class="signature">()</span><span class="type-signature"></span></h4>
     
@@ -480,6 +484,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".navigation"><span class="type-signature">&lt;static> </span>navigation<span class="signature">()</span><span class="type-signature"></span></h4>
     
@@ -567,6 +572,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".ui"><span class="type-signature">&lt;static> </span>ui<span class="signature">()</span><span class="type-signature"></span></h4>
     
@@ -710,7 +716,8 @@ $( function () {
 
 	$( "#toc" ).toc( {
 		anchorName  : function ( i, heading, prefix ) {
-			return $( heading ).attr( "id" ) || ( prefix + i );
+			var id = $( heading ).attr( "id" );
+			return id && id.replace(/\~/g, '-inner-').replace(/\./g, '-static-') || ( prefix + i );
 		},
 		selectors   : "h1,h2,h3,h4",
 		showAndHide : false,

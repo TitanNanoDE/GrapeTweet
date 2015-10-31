@@ -72,10 +72,11 @@
 	<div class="col-md-8">
 	
 		<div id="main">
-    		<h1 class="page-title">Module: Gestures</h1>
 			
 
-	<h1 class="page-title">Module: Gestures</h1>
+    
+        <h1 class="page-title">Module: Gestures</h1>
+    
 <section>
 
 <header>
@@ -171,6 +172,7 @@
 
         <dl>
             
+<hr>
 <dt class="name" id="~PullDownToRefresh">
     <h4><span class="type-signature">&lt;inner> </span>PullDownToRefresh<span class="type-signature"> :object</span></h4>
 
@@ -611,6 +613,7 @@
 
         <dl>
             
+<hr>
 <dt>
     <h4 class="name" id="~PullDownToRefresh/bind"><span class="type-signature">&lt;inner> </span>PullDownToRefresh/bind<span class="signature">(element, timeline, UI)</span><span class="type-signature"> &rarr; {null}</span></h4>
     
@@ -812,6 +815,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id="~PullDownToRefresh/listener"><span class="type-signature">&lt;inner> </span>PullDownToRefresh/listener<span class="signature">(e)</span><span class="type-signature"></span></h4>
     
@@ -953,6 +957,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id="~PullDownToRefresh/release"><span class="type-signature">&lt;inner> </span>PullDownToRefresh/release<span class="signature">(e)</span><span class="type-signature"></span></h4>
     
@@ -1146,7 +1151,8 @@ $( function () {
 
 	$( "#toc" ).toc( {
 		anchorName  : function ( i, heading, prefix ) {
-			return $( heading ).attr( "id" ) || ( prefix + i );
+			var id = $( heading ).attr( "id" );
+			return id && id.replace(/\~/g, '-inner-').replace(/\./g, '-static-') || ( prefix + i );
 		},
 		selectors   : "h1,h2,h3,h4",
 		showAndHide : false,

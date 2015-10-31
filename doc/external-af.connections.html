@@ -72,10 +72,11 @@
 	<div class="col-md-8">
 	
 		<div id="main">
-    		<h1 class="page-title">Namespace: connections</h1>
 			
 
-	<h1 class="page-title">Namespace: connections</h1>
+    
+        <h1 class="page-title">Namespace: connections</h1>
+    
 <section>
 
 <header>
@@ -168,6 +169,7 @@
 
         <dl>
                 
+<hr>
 <dt class="name" id=".OAuthClient">
     <h4>OAuthClient</h4>
 
@@ -243,6 +245,7 @@
 
             
                 
+<hr>
 <dt class="name" id=".Socket">
     <h4>Socket</h4>
 
@@ -372,7 +375,8 @@ $( function () {
 
 	$( "#toc" ).toc( {
 		anchorName  : function ( i, heading, prefix ) {
-			return $( heading ).attr( "id" ) || ( prefix + i );
+			var id = $( heading ).attr( "id" );
+			return id && id.replace(/\~/g, '-inner-').replace(/\./g, '-static-') || ( prefix + i );
 		},
 		selectors   : "h1,h2,h3,h4",
 		showAndHide : false,

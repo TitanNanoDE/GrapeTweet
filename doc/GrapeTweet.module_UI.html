@@ -72,10 +72,11 @@
 	<div class="col-md-8">
 	
 		<div id="main">
-    		<h1 class="page-title">Module: UI</h1>
 			
 
-	<h1 class="page-title">Module: UI</h1>
+    
+        <h1 class="page-title">Module: UI</h1>
+    
 <section>
 
 <header>
@@ -173,6 +174,7 @@
 
         <dl>
             
+<hr>
 <dt>
     <h4 class="name" id=".findElement"><span class="type-signature">&lt;static> </span>findElement<span class="signature">(element, selector)</span><span class="type-signature"> &rarr; {Node}</span></h4>
     
@@ -351,6 +353,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".pagesFromLeft"><span class="type-signature">&lt;static> </span>pagesFromLeft<span class="signature">(sheet, from, to)</span><span class="type-signature"> &rarr; {<a href="Promise.html">Promise</a>}</span></h4>
     
@@ -552,6 +555,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".pagesToLeft"><span class="type-signature">&lt;static> </span>pagesToLeft<span class="signature">(sheet, from, to)</span><span class="type-signature"> &rarr; {<a href="Promise.html">Promise</a>}</span></h4>
     
@@ -753,6 +757,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".renderAdditionalChunk"><span class="type-signature">&lt;static> </span>renderAdditionalChunk<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Promise.html">Promise</a>}</span></h4>
     
@@ -859,6 +864,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".renderChat"><span class="type-signature">&lt;static> </span>renderChat<span class="signature">(userId)</span><span class="type-signature"></span></h4>
     
@@ -995,6 +1001,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".renderChats"><span class="type-signature">&lt;static> </span>renderChats<span class="signature">()</span><span class="type-signature"></span></h4>
     
@@ -1082,6 +1089,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".renderChats"><span class="type-signature">&lt;static> </span>renderChats<span class="signature">(chatId)</span><span class="type-signature"></span></h4>
     
@@ -1213,6 +1221,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".renderContacts"><span class="type-signature">&lt;static> </span>renderContacts<span class="signature">()</span><span class="type-signature"></span></h4>
     
@@ -1300,6 +1309,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".renderFooterStatus"><span class="type-signature">&lt;static> </span>renderFooterStatus<span class="signature">()</span><span class="type-signature"></span></h4>
     
@@ -1432,6 +1442,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".renderTimeline"><span class="type-signature">&lt;static> </span>renderTimeline<span class="signature">()</span><span class="type-signature"></span></h4>
     
@@ -1564,6 +1575,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".renderTweets"><span class="type-signature">&lt;static> </span>renderTweets<span class="signature">()</span><span class="type-signature"> &rarr; {Proimse}</span></h4>
     
@@ -1715,6 +1727,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".switchSheet"><span class="type-signature">&lt;static> </span>switchSheet<span class="signature">(selector)</span><span class="type-signature"> &rarr; {null}</span></h4>
     
@@ -1870,6 +1883,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id="~getTimeSince"><span class="type-signature">&lt;inner> </span>getTimeSince<span class="signature">(timeString)</span><span class="type-signature"> &rarr; {string}</span></h4>
     
@@ -2025,6 +2039,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id="~renderEntities"><span class="type-signature">&lt;inner> </span>renderEntities<span class="signature">(text, entities, target, tweet)</span><span class="type-signature"></span></h4>
     
@@ -2230,6 +2245,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id="~renderMessage"><span class="type-signature">&lt;inner> </span>renderMessage<span class="signature">(item, contact, insertBefore, avatarize)</span><span class="type-signature"> &rarr; {Node}</span></h4>
     
@@ -2510,7 +2526,8 @@ $( function () {
 
 	$( "#toc" ).toc( {
 		anchorName  : function ( i, heading, prefix ) {
-			return $( heading ).attr( "id" ) || ( prefix + i );
+			var id = $( heading ).attr( "id" );
+			return id && id.replace(/\~/g, '-inner-').replace(/\./g, '-static-') || ( prefix + i );
 		},
 		selectors   : "h1,h2,h3,h4",
 		showAndHide : false,

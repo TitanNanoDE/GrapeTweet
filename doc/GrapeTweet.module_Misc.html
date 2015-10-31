@@ -72,10 +72,11 @@
 	<div class="col-md-8">
 	
 		<div id="main">
-    		<h1 class="page-title">Module: Misc</h1>
 			
 
-	<h1 class="page-title">Module: Misc</h1>
+    
+        <h1 class="page-title">Module: Misc</h1>
+    
 <section>
 
 <header>
@@ -173,6 +174,7 @@
 
         <dl>
             
+<hr>
 <dt>
     <h4 class="name" id=".cutdown"><span class="type-signature">&lt;static> </span>cutdown<span class="signature">(string, length)</span><span class="type-signature"> &rarr; {string}</span></h4>
     
@@ -351,6 +353,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".getAvatar"><span class="type-signature">&lt;static> </span>getAvatar<span class="signature">(type, type)</span><span class="type-signature"> &rarr; {<a href="global.html#URL">URL</a>}</span></h4>
     
@@ -529,6 +532,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".objectApply"><span class="type-signature">&lt;static> </span>objectApply<span class="signature">(self, update, noDeepCopy)</span><span class="type-signature"> &rarr; {object}</span></h4>
     
@@ -730,6 +734,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".sortByDate"><span class="type-signature">&lt;static> </span>sortByDate<span class="signature">(a, b)</span><span class="type-signature"> &rarr; {Tweet|DirectMessage}</span></h4>
     
@@ -917,6 +922,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".split"><span class="type-signature">&lt;static> </span>split<span class="signature">(string, partLength)</span><span class="type-signature"> &rarr; {Array.&lt;string>}</span></h4>
     
@@ -1095,6 +1101,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".throttle"><span class="type-signature">&lt;static> </span>throttle<span class="signature">(func, timeout)</span><span class="type-signature"> &rarr; {function}</span></h4>
     
@@ -1329,7 +1336,8 @@ $( function () {
 
 	$( "#toc" ).toc( {
 		anchorName  : function ( i, heading, prefix ) {
-			return $( heading ).attr( "id" ) || ( prefix + i );
+			var id = $( heading ).attr( "id" );
+			return id && id.replace(/\~/g, '-inner-').replace(/\./g, '-static-') || ( prefix + i );
 		},
 		selectors   : "h1,h2,h3,h4",
 		showAndHide : false,

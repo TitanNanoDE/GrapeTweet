@@ -72,10 +72,11 @@
 	<div class="col-md-8">
 	
 		<div id="main">
-    		<h1 class="page-title">Class: Promise</h1>
 			
 
-	<h1 class="page-title">Class: Promise</h1>
+    
+        <h1 class="page-title">Class: Promise</h1>
+    
 <section>
 
 <header>
@@ -92,6 +93,7 @@
     <div class="container-overview">
     
         
+<hr>
 <dt>
     <h4 class="name" id="Promise"><span class="type-signature"></span>new Promise<span class="signature">(func)</span><span class="type-signature"></span></h4>
     
@@ -242,6 +244,7 @@
 
         <dl>
             
+<hr>
 <dt>
     <h4 class="name" id="catch"><span class="type-signature"></span>catch<span class="signature">(func)</span><span class="type-signature"> &rarr; {<a href="Promise.html">Promise</a>}</span></h4>
     
@@ -393,6 +396,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id="then"><span class="type-signature"></span>then<span class="signature">(func, func)</span><span class="type-signature"> &rarr; {<a href="Promise.html">Promise</a>}</span></h4>
     
@@ -573,6 +577,7 @@
 
         <dl>
                 
+<hr>
 <dt>
     <h4 class="name" id="~OnError"><span class="type-signature"></span>OnError<span class="signature">(error)</span><span class="type-signature"> &rarr; {object}</span></h4>
     
@@ -724,6 +729,7 @@
 
             
                 
+<hr>
 <dt>
     <h4 class="name" id="~OnSuccess"><span class="type-signature"></span>OnSuccess<span class="signature">(value)</span><span class="type-signature"> &rarr; {object}</span></h4>
     
@@ -875,6 +881,7 @@
 
             
                 
+<hr>
 <dt>
     <h4 class="name" id="~Worker"><span class="type-signature"></span>Worker<span class="signature">(resolve, reject)</span><span class="type-signature"></span></h4>
     
@@ -1084,7 +1091,8 @@ $( function () {
 
 	$( "#toc" ).toc( {
 		anchorName  : function ( i, heading, prefix ) {
-			return $( heading ).attr( "id" ) || ( prefix + i );
+			var id = $( heading ).attr( "id" );
+			return id && id.replace(/\~/g, '-inner-').replace(/\./g, '-static-') || ( prefix + i );
 		},
 		selectors   : "h1,h2,h3,h4",
 		showAndHide : false,

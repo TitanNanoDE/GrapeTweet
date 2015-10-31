@@ -72,10 +72,11 @@
 	<div class="col-md-8">
 	
 		<div id="main">
-    		<h1 class="page-title">Module: Cache</h1>
 			
 
-	<h1 class="page-title">Module: Cache</h1>
+    
+        <h1 class="page-title">Module: Cache</h1>
+    
 <section>
 
 <header>
@@ -173,6 +174,7 @@
 
         <dl>
             
+<hr>
 <dt>
     <h4 class="name" id=".fetchPicture"><span class="type-signature">&lt;static> </span>fetchPicture<span class="signature">(url)</span><span class="type-signature"> &rarr; {<a href="Promise.html">Promise</a>}</span></h4>
     
@@ -328,6 +330,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".recover"><span class="type-signature">&lt;static> </span>recover<span class="signature">(url)</span><span class="type-signature"> &rarr; {<a href="Promise.html">Promise</a>}</span></h4>
     
@@ -483,6 +486,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".save"><span class="type-signature">&lt;static> </span>save<span class="signature">(url, blob, <span class="optional">disc</span>)</span><span class="type-signature"> &rarr; {<a href="Promise.html">Promise</a>}</span></h4>
     
@@ -768,7 +772,8 @@ $( function () {
 
 	$( "#toc" ).toc( {
 		anchorName  : function ( i, heading, prefix ) {
-			return $( heading ).attr( "id" ) || ( prefix + i );
+			var id = $( heading ).attr( "id" );
+			return id && id.replace(/\~/g, '-inner-').replace(/\./g, '-static-') || ( prefix + i );
 		},
 		selectors   : "h1,h2,h3,h4",
 		showAndHide : false,

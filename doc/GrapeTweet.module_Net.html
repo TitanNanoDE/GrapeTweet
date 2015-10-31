@@ -72,10 +72,11 @@
 	<div class="col-md-8">
 	
 		<div id="main">
-    		<h1 class="page-title">Module: Net</h1>
 			
 
-	<h1 class="page-title">Module: Net</h1>
+    
+        <h1 class="page-title">Module: Net</h1>
+    
 <section>
 
 <header>
@@ -173,6 +174,7 @@
 
         <dl>
             
+<hr>
 <dt>
     <h4 class="name" id=".downloadDirectMessages"><span class="type-signature">&lt;static> </span>downloadDirectMessages<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Promise.html">Promise</a>}</span></h4>
     
@@ -279,6 +281,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".downloadImage"><span class="type-signature">&lt;static> </span>downloadImage<span class="signature">(url)</span><span class="type-signature"> &rarr; {<a href="Promise.html">Promise</a>}</span></h4>
     
@@ -434,6 +437,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".fetchNewHomeTweets"><span class="type-signature">&lt;static> </span>fetchNewHomeTweets<span class="signature">(Timeline)</span><span class="type-signature"> &rarr; {<a href="Promise.html">Promise</a>}</span></h4>
     
@@ -589,6 +593,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".fetchNewMessages"><span class="type-signature">&lt;static> </span>fetchNewMessages<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Promise.html">Promise</a>}</span></h4>
     
@@ -695,6 +700,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".pullPushMessages"><span class="type-signature">&lt;static> </span>pullPushMessages<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Promise.html">Promise</a>}</span></h4>
     
@@ -801,6 +807,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".sendDirectMessage"><span class="type-signature">&lt;static> </span>sendDirectMessage<span class="signature">(text)</span><span class="type-signature"> &rarr; {<a href="Promise.html">Promise</a>}</span></h4>
     
@@ -956,6 +963,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".syncContacts"><span class="type-signature">&lt;static> </span>syncContacts<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Promise.html">Promise</a>}</span></h4>
     
@@ -1062,6 +1070,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".uploadMedia"><span class="type-signature">&lt;static> </span>uploadMedia<span class="signature">(blob, direct_message, onprogress)</span><span class="type-signature"> &rarr; {<a href="Promise.html">Promise</a>}</span></h4>
     
@@ -1319,7 +1328,8 @@ $( function () {
 
 	$( "#toc" ).toc( {
 		anchorName  : function ( i, heading, prefix ) {
-			return $( heading ).attr( "id" ) || ( prefix + i );
+			var id = $( heading ).attr( "id" );
+			return id && id.replace(/\~/g, '-inner-').replace(/\./g, '-static-') || ( prefix + i );
 		},
 		selectors   : "h1,h2,h3,h4",
 		showAndHide : false,

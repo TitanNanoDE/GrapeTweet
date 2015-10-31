@@ -72,10 +72,11 @@
 	<div class="col-md-8">
 	
 		<div id="main">
-    		<h1 class="page-title">Namespace: GrapeTweet</h1>
 			
 
-	<h1 class="page-title">Namespace: GrapeTweet</h1>
+    
+        <h1 class="page-title">Namespace: GrapeTweet</h1>
+    
 <section>
 
 <header>
@@ -117,7 +118,7 @@
 	<dt class="tag-author">Author:</dt>
 	<dd class="tag-author">
 		<ul>
-			<li>Jovan Gerodetti</li>
+			<li><a href="mailto:jovan@titannano.de">Jovan Gerodetti</a></li>
 			</ul>
 	</dd>
 	
@@ -169,6 +170,7 @@
 
         <dl>
             
+<hr>
 <dt class="name" id=".cache">
     <h4><span class="type-signature">&lt;static> </span>cache<span class="type-signature"> :object</span></h4>
 
@@ -296,6 +298,7 @@
 
         
             
+<hr>
 <dt class="name" id=".loadingChunk">
     <h4><span class="type-signature">&lt;static> </span>loadingChunk<span class="type-signature"> :boolean</span></h4>
 
@@ -371,6 +374,7 @@
 
         
             
+<hr>
 <dt class="name" id=".pushServer">
     <h4><span class="type-signature">&lt;static> </span>pushServer<span class="type-signature"> :<a href="external-af.connections.html#.Socket">external:af.connections.Socket</a></span></h4>
 
@@ -446,6 +450,7 @@
 
         
             
+<hr>
 <dt class="name" id=".twitterSocket">
     <h4><span class="type-signature">&lt;static> </span>twitterSocket<span class="type-signature"> :<a href="external-af.connections.html#.OAuthClient">external:af.connections.OAuthClient</a></span></h4>
 
@@ -521,6 +526,7 @@
 
         
             
+<hr>
 <dt class="name" id="~Defaults">
     <h4><span class="type-signature">&lt;inner> </span>Defaults<span class="type-signature"> :object</span></h4>
 
@@ -748,6 +754,7 @@
 
         <dl>
             
+<hr>
 <dt>
     <h4 class="name" id=".createConversation"><span class="type-signature">&lt;static> </span>createConversation<span class="signature">(id, lastmessage, unread)</span><span class="type-signature"> &rarr; {<a href="Conversation.html">Conversation</a>}</span></h4>
     
@@ -949,6 +956,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".createTimeline"><span class="type-signature">&lt;static> </span>createTimeline<span class="signature">(name, id)</span><span class="type-signature"> &rarr; {<a href="Timeline.html">Timeline</a>}</span></h4>
     
@@ -1127,6 +1135,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".fixKeyboard"><span class="type-signature">&lt;static> </span>fixKeyboard<span class="signature">(element)</span><span class="type-signature"></span></h4>
     
@@ -1263,6 +1272,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".integrateIntoMessagesChain"><span class="type-signature">&lt;static> </span>integrateIntoMessagesChain<span class="signature">(message, conversation)</span><span class="type-signature"></span></h4>
     
@@ -1422,6 +1432,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".integrateIntoTimeline"><span class="type-signature">&lt;static> </span>integrateIntoTimeline<span class="signature">(tweet, timeline)</span><span class="type-signature"></span></h4>
     
@@ -1581,6 +1592,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".notify"><span class="type-signature">&lt;static> </span>notify<span class="signature">(conversationId)</span><span class="type-signature"></span></h4>
     
@@ -1717,6 +1729,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".objectReplace"><span class="type-signature">&lt;static> </span>objectReplace<span class="signature">()</span><span class="type-signature"></span></h4>
     
@@ -1807,6 +1820,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".openChat"><span class="type-signature">&lt;static> </span>openChat<span class="signature">(e)</span><span class="type-signature"></span></h4>
     
@@ -1943,6 +1957,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".openChat"><span class="type-signature">&lt;static> </span>openChat<span class="signature">(e)</span><span class="type-signature"></span></h4>
     
@@ -2079,6 +2094,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".pullPushMessages"><span class="type-signature">&lt;static> </span>pullPushMessages<span class="signature">()</span><span class="type-signature"></span></h4>
     
@@ -2166,6 +2182,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".releaseKeyboard"><span class="type-signature">&lt;static> </span>releaseKeyboard<span class="signature">(element)</span><span class="type-signature"></span></h4>
     
@@ -2302,6 +2319,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".show"><span class="type-signature">&lt;static> </span>show<span class="signature">()</span><span class="type-signature"></span></h4>
     
@@ -2389,6 +2407,7 @@
 
         
             
+<hr>
 <dt>
     <h4 class="name" id=".updatePushServer"><span class="type-signature">&lt;static> </span>updatePushServer<span class="signature">(force)</span><span class="type-signature"></span></h4>
     
@@ -2581,7 +2600,8 @@ $( function () {
 
 	$( "#toc" ).toc( {
 		anchorName  : function ( i, heading, prefix ) {
-			return $( heading ).attr( "id" ) || ( prefix + i );
+			var id = $( heading ).attr( "id" );
+			return id && id.replace(/\~/g, '-inner-').replace(/\./g, '-static-') || ( prefix + i );
 		},
 		selectors   : "h1,h2,h3,h4",
 		showAndHide : false,
